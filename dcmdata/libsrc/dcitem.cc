@@ -85,7 +85,7 @@ DcmItem::DcmItem()
     fStartPosition(0),
     privateCreatorCache()
 {
-    elementList = new DcmList;
+    elementList = new DcmElementList;
 }
 
 
@@ -97,13 +97,13 @@ DcmItem::DcmItem(const DcmTag &tag,
     fStartPosition(0),
     privateCreatorCache()
 {
-    elementList = new DcmList;
+    elementList = new DcmElementList;
 }
 
 
 DcmItem::DcmItem(const DcmItem &old)
   : DcmObject(old),
-    elementList(new DcmList),
+    elementList(new DcmElementList),
     lastElementComplete(old.lastElementComplete),
     fStartPosition(old.fStartPosition),
     privateCreatorCache()
@@ -114,7 +114,7 @@ DcmItem::DcmItem(const DcmItem &old)
         old.elementList->seek(ELP_first);
         do
         {
-            DcmObject *dO = old.elementList->get()->clone();
+            const auto dO = static_cast<DcmElement*>(old.elementList->get()->clone());
             elementList->insert(dO, ELP_next);
             // remember the parent
             dO->setParent(this);
@@ -142,7 +142,7 @@ DcmItem& DcmItem::operator=(const DcmItem& obj)
             obj.elementList->seek(ELP_first);
             do
             {
-                DcmObject *dO = obj.elementList->get()->clone();
+                const auto dO = static_cast<DcmElement*>(obj.elementList->get()->clone());
                 elementList->insert(dO, ELP_next);
                 // remember the parent
                 dO->setParent(this);
@@ -1772,139 +1772,7 @@ OFCondition DcmItem::insert(DcmElement *elem,
                             OFBool replaceOld,
                             OFBool checkInsertOrder)
 {
-    /* initialize error flag with ok */
-    errorFlag = EC_Normal;
-    /* do something only if the pointer which was passed does not equal NULL */
-    if (elem != NULL)
-    {
-        DcmElement *dE;
-        E_ListPos seekmode = ELP_last;
-        /* iterate through elementList (from the last element to the first) */
-        do {
-            /* get current element from elementList */
-            dE = OFstatic_cast(DcmElement *, elementList->seek(seekmode));
-            /* if there is no element, i.e. elementList is empty */
-            if (dE == NULL)
-            {
-                /* insert new element at the beginning of elementList */
-                elementList->insert(elem, ELP_first);
-                if (checkInsertOrder)
-                {
-                    // check if we have inserted at the end of the list
-                    if (elem != OFstatic_cast(DcmElement *, elementList->seek(ELP_last)))
-                    {
-                        // produce diagnostics
-                        DCMDATA_WARN("DcmItem: Dataset not in ascending tag order, at element " << elem->getTag());
-                    }
-                }
-                /* dump some information if required */
-                DCMDATA_TRACE("DcmItem::insert() Element " << elem->getTag()
-                    << " VR=\"" << DcmVR(elem->getVR()).getVRName() << "\" inserted at beginning");
-                /* check whether the new element already has a parent */
-                if (elem->getParent() != NULL)
-                {
-                    DCMDATA_DEBUG("DcmItem::insert() Element " << elem->getTag() << " already has a parent: "
-                      << elem->getParent()->getTag() << " VR=" << DcmVR(elem->getParent()->getVR()).getVRName());
-                }
-                /* remember the parent (i.e. the surrounding item/dataset) */
-                elem->setParent(this);
-                /* terminate do-while-loop */
-                break;
-            }
-            /* else if the new element's tag is greater than the current element's tag */
-            /* (i.e. we have found the position where the new element shall be inserted) */
-            else if (elem->getTag() > dE->getTag().getTagKey() /* only compare the attribute tag */)
-            {
-                /* insert the new element after the current element */
-                elementList->insert(elem, ELP_next);
-                if (checkInsertOrder)
-                {
-                    // check if we have inserted at the end of the list
-                    if (elem != OFstatic_cast(DcmElement *, elementList->seek(ELP_last)))
-                    {
-                        // produce diagnostics
-                        DCMDATA_WARN("DcmItem: Dataset not in ascending tag order, at element " << elem->getTag());
-                    }
-                }
-                /* dump some information if required */
-                DCMDATA_TRACE("DcmItem::insert() Element " << elem->getTag()
-                    << " VR=\"" << DcmVR(elem->getVR()).getVRName() << "\" inserted");
-                /* check whether the new element already has a parent */
-                if (elem->getParent() != NULL)
-                {
-                    DCMDATA_DEBUG("DcmItem::insert() Element " << elem->getTag() << " already has a parent: "
-                        << elem->getParent()->getTag() << " VR=" << DcmVR(elem->getParent()->getVR()).getVRName());
-                }
-                /* remember the parent (i.e. the surrounding item/dataset) */
-                elem->setParent(this);
-                /* terminate do-while-loop */
-                break;
-            }
-            /* else if the current element and the new element show the same tag */
-            else if (elem->getTag() == dE->getTag().getTagKey() /* only compare the attribute tag */)
-            {
-                /* if new and current element are not identical */
-                if (elem != dE)
-                {
-                    /* if the current (old) element shall be replaced */
-                    if (replaceOld)
-                    {
-                        /* remove current element from list */
-                        DcmObject *remObj = elementList->remove();
-
-                        /* now the following holds: remObj == dE and elementList */
-                        /* points to the element after the former current element. */
-
-                        /* if the pointer to the removed object does not */
-                        /* equal NULL (the usual case), delete this object */
-                        /* and dump some information if required */
-                        if (remObj != NULL)
-                        {
-                            /* dump some information if required */
-                            DCMDATA_TRACE("DcmItem::insert() Element " << remObj->getTag()
-                                << " VR=\"" << DcmVR(remObj->getVR()).getVRName()
-                                << "\" p=" << OFstatic_cast(void *, remObj) << " removed and deleted");
-                            delete remObj;
-                        }
-                        /* insert the new element before the current element */
-                        elementList->insert(elem, ELP_prev);
-                        /* dump some information if required */
-                        DCMDATA_TRACE("DcmItem::insert() Element " << elem->getTag()
-                            << " VR=\"" << DcmVR(elem->getVR()).getVRName()
-                            << "\" p=" << OFstatic_cast(void *, elem) << " replaced older one");
-                        /* check whether the new element already has a parent */
-                        if (elem->getParent() != NULL)
-                        {
-                            DCMDATA_DEBUG("DcmItem::insert() Element " << elem->getTag() << " already has a parent: "
-                                << elem->getParent()->getTag() << " VR=" << DcmVR(elem->getParent()->getVR()).getVRName());
-                        }
-                        /* remember the parent (i.e. the surrounding item/dataset) */
-                        elem->setParent(this);
-                    }   // if (replaceOld)
-                    /* or else, i.e. the current element shall not be replaced by the new element */
-                    else {
-                        /* set the error flag correspondingly; we do not */
-                        /* allow two elements with the same tag in elementList */
-                        errorFlag = EC_DoubledTag;
-                    }   // if (!replaceOld)
-                }   // if (elem != dE)
-                /* if the new and the current element are identical, the caller tries to insert */
-                /* one element twice. Most probably an application error. */
-                else {
-                    errorFlag = EC_DoubledTag;
-                }
-                /* terminate do-while-loop */
-                break;
-            }
-            /* set the seek mode to "get the previous element" */
-            seekmode = ELP_prev;
-        } while (dE);
-    }
-    /* if the pointer which was passed equals NULL, this is an illegal call */
-    else
-        errorFlag = EC_IllegalCall;
-    /* return result value */
-    return errorFlag;
+   return errorFlag = elementList->insert(elem, replaceOld, checkInsertOrder);
 }
 
 
@@ -2119,6 +1987,12 @@ OFCondition DcmItem::searchSubFromHere(const DcmTagKey &tag,
                                        DcmStack &resultStack,
                                        OFBool searchIntoSub)
 {
+    if (!searchIntoSub) {
+	DcmElement *element = elementList->find(tag);
+	if (element)
+	    resultStack.push(element);
+	return element ? EC_Normal : EC_TagNotFound;
+    }
     DcmObject *dO;
     OFCondition l_error = EC_TagNotFound;
     if (!elementList->empty())
@@ -2352,6 +2226,10 @@ OFCondition DcmItem::findAndGetElement(const DcmTagKey &tagKey,
                                        const OFBool searchIntoSub,
                                        const OFBool createCopy)
 {
+  if (!searchIntoSub) {
+    element = elementList->find(tagKey);
+    return element ? EC_Normal : EC_TagNotFound;
+  } else {
     DcmStack stack;
     /* find the element */
     OFCondition status = search(tagKey, stack, ESM_fromHere, searchIntoSub);
@@ -2373,6 +2251,7 @@ OFCondition DcmItem::findAndGetElement(const DcmTagKey &tagKey,
         element = NULL;
     }
     return status;
+  }
 }
 
 

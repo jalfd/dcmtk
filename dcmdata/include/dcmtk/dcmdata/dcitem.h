@@ -29,6 +29,7 @@
 #include "dcmtk/dcmdata/dctypes.h"
 #include "dcmtk/dcmdata/dcobject.h"
 #include "dcmtk/dcmdata/dclist.h"
+#include "dcmtk/dcmdata/dcelist.h"
 #include "dcmtk/dcmdata/dcpcache.h"
 
 
@@ -1359,7 +1360,7 @@ class DCMTK_DCMDATA_EXPORT DcmItem
   protected:
 
     /// the list of elements maintained by this object
-    DcmList *elementList;
+    DcmElementList *elementList;
 
     /** flag used during suspended I/O. Indicates whether the last element
      *  was completely or only partially read/written during the last call

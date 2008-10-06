@@ -8,7 +8,7 @@ Name: evdcmtk-3.6.4
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
-Release: 6%{?dist}
+Release: 7%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
 Source: dcmtk-3.6.4.tar.gz
@@ -137,6 +137,10 @@ rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Mar 06 2019 Thomas Sondergaard <tsondergaard@vitalimages.cmo> - 3.6.4-1-7
+- EV-4533: Reintroduce old DcmElementList patch from EasyViz dcmtk-cvs to make it easier to
+  access dcmdataset from multiple threads
+
 * Mon Jan 28 2019 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1-6
 - EV-1080: Fix missing Require for libxml2-devel, despite libxml2 only being used internally.
   The CMake build system in dcmtk is unfortunately broken and all dependencies are public.
