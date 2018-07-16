@@ -466,7 +466,7 @@ OFCondition DJCodecDecoder::decodeFrame(
     // If the user has passed a zero, try to find out ourselves.
     if (currentItem == 0 && result.good())
     {
-      result = determineStartFragment(frameNo, imageFrames, fromPixSeq, currentItem);
+      result = findStartFragment(frameNo, imageFrames, fromPixSeq, currentItem);
     }
 
     // book-keeping needed to clean-up memory the end of this routine
@@ -595,6 +595,45 @@ OFCondition DJCodecDecoder::decodeFrame(
 }
 
 
+OFCondition DJCodecDecoder::findStartFragment(Uint32 frameNo,
+						   Sint32 numberOfFrames,
+						   DcmPixelSequence * fromPixSeq,
+						   Uint32& currentItem) const
+{
+  // We have no frame-offset table available. Assume that fragments that
+  // start with the jpeg SOI marker (0xFFD8) are frame start fragments,
+  // but only if the previous fragment ends in 0xffd9 (end-of-image)
+  // Beware: This code will not work with jpeg2000 as it uses SOI 0xff4f
+  Uint32 itemNo = 0;
+  for (Uint32 i = 0; i <= frameNo; ++i) {
+    bool startMarker = true;
+    bool endMarker = true;
+    bool previousEnd = true;
+
+    do {
+      itemNo++;
+      previousEnd = endMarker;
+      DcmPixelItem *pixItem = NULL;
+      if (fromPixSeq->getItem(pixItem, itemNo).bad ())
+	return EC_TagNotFound;  // Most likely dataset is incomplete
+      Uint32 contentLength = pixItem->getLength();
+      if (contentLength < 2)
+	return EC_IllegalCall;
+      Uint8 *content = NULL;
+      pixItem->getUint8Array (content);
+      startMarker = content[0] == 0xff && content[1] == 0xd8;
+      // Note. The end marker may be off by one if the compressed
+      // bit stream is odd length.
+      if (content[contentLength - 2] == 0xff)
+	endMarker = content[contentLength - 1] == 0xd9;
+      else if (content[contentLength - 3] == 0xff)
+	endMarker = content[contentLength - 2] == 0xd9;
+    } while (! (startMarker && previousEnd));
+  }
+  currentItem = itemNo;
+  return EC_Normal;
+}
+
 OFCondition DJCodecDecoder::encode(
     const Uint16 * /* pixelData */,
     const Uint32 /* length */,
@@ -667,7 +706,7 @@ Uint16 DJCodecDecoder::readUint16(const Uint8 *data)
 
 Uint8 DJCodecDecoder::scanJpegDataForBitDepth(
   const Uint8 *data,
-  const Uint32 fragmentLength)
+  const Uint32 fragmentLength) const
 {
   // first, check whether there is any JPEG data at all
   if (data == NULL) return 0;

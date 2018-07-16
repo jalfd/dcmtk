@@ -111,6 +111,21 @@ public:
     Uint32 bufSize,
     OFString& decompressedColorModel) const;
 
+  /** determine the index number (starting with zero) of the compressed pixel data fragment
+   *  corresponding to the given frame (also starting with zero). This implementation works with
+   *  the old jpeg transfer syntaxes. (i.e. not jpeg2000)
+   *  @param frameNo frame number
+   *  @param numberOfFrames number of frames of this image
+   *  @param fromPixSeq compressed pixel sequence
+   *  @param currentItem index of compressed pixel data fragment returned in this parameter on success
+   *  @return EC_Normal if successful, an error code otherwise
+   */
+  virtual OFCondition findStartFragment(
+    Uint32 frameNo,
+    Sint32 numberOfFrames,
+    DcmPixelSequence * fromPixSeq,
+    Uint32& currentItem) const;
+
   /** compresses the given uncompressed DICOM image and stores
    *  the result in the given pixSeq element.
    *  @param pixelData pointer to the uncompressed image data in OW format
@@ -233,9 +248,9 @@ private:
    *  @param fragmentLength size of array
    *  @return bit depth of JPEG data, 0 if no SOF marker found or parse error
    */
-  static Uint8 scanJpegDataForBitDepth(
+  virtual Uint8 scanJpegDataForBitDepth(
     const Uint8 *data,
-    const Uint32 fragmentLength);
+    const Uint32 fragmentLength) const;
 
   /** reads two bytes from the given array
    *  of little endian 16-bit values and returns
