@@ -1630,6 +1630,61 @@ ASC_dumpConnectionParameters(OFString &str, T_ASC_Association *association)
 typedef DcmTransportConnection *P_DcmTransportConnection;
 
 OFBool
+ASC_selectReadableAssociation( T_ASC_Association *assocs[],
+                               int assocCount,
+                               T_ASC_Network *networks[],
+                               int networkCount,
+                               int timeout )
+{
+  if (assocCount <= 0)
+    return OFFalse;
+
+  P_DcmTransportConnection *connections = new P_DcmTransportConnection[assocCount+networkCount];
+  if (connections == NULL)
+    return OFFalse;
+
+  int i, j=0;
+  for (i=0; i < assocCount; i++)
+  {
+    if (assocs[i])
+      connections[j] = DUL_getTransportConnection(assocs[i]->DULassociation);
+    else
+      connections[j] = NULL;
+    j++;
+  }
+  for (i=0; i < networkCount; i++)
+  {
+    if (networks[i])
+      connections[j] = new DcmTCPConnection( DUL_networkSocket(networks[i]->network) );
+    else
+      connections[j] = NULL;
+    j++;
+  }
+
+  OFBool result = DcmTransportConnection::selectReadableAssociation(connections, j, timeout);
+  if (result)
+  {
+    int j = 0;
+    for (i=0; i<assocCount; i++)
+    {
+      if (connections[j]==NULL)
+	assocs[i]=NULL;
+      j++;
+    }
+    for (i=0; i<networkCount; i++)
+    {
+      if (connections[j]==NULL)
+	networks[i]=NULL;
+      j++;
+    }
+
+  }
+  delete[] connections;
+
+  return result;
+}
+
+OFBool
 ASC_selectReadableAssociation(T_ASC_Association* assocs[],
         int assocCount, int timeout)
 {

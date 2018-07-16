@@ -668,6 +668,15 @@ ASC_selectReadableAssociation(
     T_ASC_Association* assocs[],
     int assocCount, int timeout);
 
+/* overload: select both on open associations and networks */
+DCMTK_DCMNET_EXPORT OFBool
+ASC_selectReadableAssociation(T_ASC_Association *assocs[],
+			      int assocCount,
+			      T_ASC_Network *networks[],
+			      int networkCount,
+			      int timeoout);
+
+
 /*
  * Association Messages
  */
