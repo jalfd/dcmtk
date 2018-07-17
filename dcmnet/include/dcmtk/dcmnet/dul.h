@@ -189,8 +189,8 @@ typedef struct {
     char calledPresentationAddress[64];
     LST_HEAD *requestedPresentationContext;
     LST_HEAD *acceptedPresentationContext;
-    unsigned short maximumOperationsInvoked;
-    unsigned short maximumOperationsPerformed;
+    int short maximumOperationsInvoked;
+    int short maximumOperationsPerformed;
     char callingImplementationClassUID[DICOM_UI_LENGTH + 1];
     char callingImplementationVersionName[16 + 1];
     char calledImplementationClassUID[DICOM_UI_LENGTH + 1];

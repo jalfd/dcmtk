@@ -325,6 +325,9 @@ ASC_createAssociationParameters(T_ASC_Parameters ** params,
     (*params)->theirMaxPDUReceiveSize = 0;      /* not yet negotiated */
     (*params)->modeCallback = NULL;
 
+    (*params)->DULparams.maximumOperationsInvoked = -1;
+    (*params)->DULparams.maximumOperationsPerformed = -1;
+
     /* set something unusable */
     ASC_setPresentationAddresses(*params,
                                  "calling Presentation Address",
@@ -514,6 +517,20 @@ ASC_getRejectParameters(T_ASC_Parameters * params,
         }
     }
     return EC_Normal;
+}
+
+void
+ASC_setAsyncOperations(T_ASC_Parameters *params, int invoked, int performed)
+{
+    params->DULparams.maximumOperationsInvoked = invoked;
+    params->DULparams.maximumOperationsPerformed = performed;
+}
+
+void
+ASC_getAsyncOperations(T_ASC_Parameters *params, int &invoked, int &performed)
+{
+    invoked = params->DULparams.maximumOperationsInvoked;
+    performed = params->DULparams.maximumOperationsPerformed;
 }
 
 OFString&

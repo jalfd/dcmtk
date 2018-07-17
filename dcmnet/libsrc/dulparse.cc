@@ -88,6 +88,9 @@ parseUserInfo(DUL_USERINFO * userInfo,
               unsigned char *buf, unsigned long *itemLength,
               unsigned char typeRQorAC, unsigned long availData);
 static OFCondition
+parseAsyncOperations(PRV_ASYNCOPERATIONS *async, unsigned char *buf,
+                     unsigned long *length);
+static OFCondition
 parseMaxPDU(DUL_MAXLENGTH * max, unsigned char *buf,
             unsigned long *itemLength, unsigned long availData);
 static OFCondition
@@ -275,6 +278,13 @@ parseAssociate(unsigned char *buf, unsigned long pduLength,
                     DCMNET_TRACE("Successfully parsed User Information");
                 }
             }
+            break;
+        case DUL_TYPEASYNCOPERATIONS:
+            assoc->userInfo.asyncOperations = new PRV_ASYNCOPERATIONS;
+            cond = parseAsyncOperations(assoc->userInfo.asyncOperations, buf, &itemLength);
+            buf += itemLength;
+            pduLength -= itemLength;
+            DCMNET_TRACE("Successfully parsed Async Ops");
             break;
         default:
             cond = parseDummy(buf, &itemLength, pduLength);
@@ -555,7 +565,8 @@ parseUserInfo(DUL_USERINFO * userInfo,
             break;
 
         case DUL_TYPEASYNCOPERATIONS:
-            cond = parseDummy(buf, &length, userLength);
+	    userInfo->asyncOperations = new PRV_ASYNCOPERATIONS;
+	    cond = parseAsyncOperations(userInfo->asyncOperations, buf, &length);
             if (cond.bad())
                 return cond;
             buf += length;
@@ -872,6 +883,23 @@ parseExtNeg(SOPClassExtendedNegotiationSubItem* extNeg, unsigned char *buf,
         OFSTRINGSTREAM_GETOFSTRING(str, res)
         DCMNET_TRACE(res);
     }
+
+    return EC_Normal;
+}
+
+static OFCondition
+parseAsyncOperations(PRV_ASYNCOPERATIONS *async, unsigned char *buf,
+                     unsigned long *length)
+{
+    async->type = *buf++;
+    async->rsv1 = *buf++;
+    EXTRACT_SHORT_BIG(buf,async->length);
+    buf += 2;
+    EXTRACT_SHORT_BIG(buf,async->maximumOperationsInvoked);
+    buf += 2;
+    EXTRACT_SHORT_BIG(buf,async->maximumOperationsPerformed);
+    buf += 2;
+    *length = 8;
 
     return EC_Normal;
 }

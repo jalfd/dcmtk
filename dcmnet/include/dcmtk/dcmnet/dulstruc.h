@@ -195,7 +195,7 @@ typedef struct {
     unsigned char rsv1;
     unsigned short length;
     unsigned short maximumOperationsInvoked;
-    unsigned short maximumOperationsProvided;
+    unsigned short maximumOperationsPerformed;
 }   PRV_ASYNCOPERATIONS;
 
 typedef struct {
@@ -243,7 +243,7 @@ typedef struct user_info {
     unsigned char rsv1;
     unsigned short length;
     DUL_MAXLENGTH maxLength;                             // 51H: maximum length
-    PRV_ASYNCOPERATIONS asyncOperations;                 // 53H: async operations (not yet implemented!)
+    PRV_ASYNCOPERATIONS *asyncOperations;                // 53H: async operations
     DUL_SUBITEM implementationClassUID;                  // 52H: implementation class UID
     DUL_SUBITEM implementationVersionName;               // 55H: implementation version name
     LST_HEAD *SCUSCPRoleList;                            // 54H: SCP/SCU role selection
