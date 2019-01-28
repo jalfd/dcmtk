@@ -1,8 +1,14 @@
+# We always want debuginfo available because we always analyze crashes
+# on-site because coredumps are not PHI-clean. The easiest way to achive this is
+# to follow the style from easyviz.spec and avoid building debuginfo rpms altogether.
+%define __strip /bin/true
+%define debug_package %{nil}
+
 Name: evdcmtk-3.6.4
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
 Source: dcmtk-3.6.4.tar.gz
@@ -114,5 +120,8 @@ rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Jan 28 2019 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1-3
+- Keep debug symbols embedded to ensure they are available for easyviz-coredump
+
 * Mon Jan 21 2019 Jesper Bojesen <jbojesen@vitalimages.com>
 - 3.6.4-1 Import from Offis and port EasyViz modification from 3.5.4
