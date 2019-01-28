@@ -8,14 +8,14 @@ Name: evdcmtk-3.6.4
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
-Release: 4%{?dist}
+Release: 6%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
 Source: dcmtk-3.6.4.tar.gz
 Prefix: /opt/easyviz/dcmtk-3.6.4
 
 BuildRequires: cmake
-BuildRequires: libjpeg-devel
+BuildRequires: libjpeg-turbo-devel
 BuildRequires: libpng-devel
 BuildRequires: libtiff-devel
 BuildRequires: libxml2-devel
@@ -27,6 +27,13 @@ BuildRequires: doxygen
 BuildRequires: devtoolset-8-toolchain
 Requires: devtoolset-8-runtime
 %endif
+Requires: libjpeg-turbo
+Requires: libpng
+Requires: libtiff
+Requires: libxml2
+Requires: openssl-libs
+Requires: zlib
+Requires: libicu
 
 %description
 DCMTK is a collection of libraries and applications implementing large
@@ -45,6 +52,7 @@ Requires: %{name}%{?_isa} = %{version}-%{release}
 Requires: libpng-devel%{?_isa}
 Requires: libtiff-devel%{?_isa}
 Requires: libicu-devel%{?_isa}
+Requires: libxml2-devel%{?_isa}
 
 %description devel
 Development Libraries and Headers for dcmtk.  You only need to install
@@ -129,6 +137,13 @@ rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Jan 28 2019 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1-6
+- EV-1080: Fix missing Require for libxml2-devel, despite libxml2 only being used internally.
+  The CMake build system in dcmtk is unfortunately broken and all dependencies are public.
+
+* Mon Jan 28 2019 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1-5
+- EV-1080: Add missing Requires and fix BuildRequires
+
 * Mon Jan 28 2019 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1-4
 - EV-4421: Build with devtoolset-8 on RHEL/CentOS
 
