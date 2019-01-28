@@ -8,7 +8,7 @@ Name: evdcmtk-3.6.4
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
-Release: 3%{?dist}
+Release: 4%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
 Source: dcmtk-3.6.4.tar.gz
@@ -24,8 +24,8 @@ BuildRequires: zlib-devel
 BuildRequires: libicu-devel
 BuildRequires: doxygen
 %if 0%{?rhel}
-BuildRequires: devtoolset-7-toolchain
-Requires: devtoolset-7-runtime
+BuildRequires: devtoolset-8-toolchain
+Requires: devtoolset-8-runtime
 %endif
 
 %description
@@ -54,6 +54,15 @@ this if you are developing programs that use the dcmtk libraries.
 %setup -q -n dcmtk-3.6.4
 
 %build
+%if 0%{?rhel}
+if [[ ! $X_SCLS =~ "devtoolset-8" ]]; then
+    set +x
+    echo
+    echo 'This package must be built with devtoolset-8 on RHEL/CentOS 7.'
+    echo 'Please run "scl enable devtoolset-8 bash" before running rpmbuild.'
+    false
+fi
+%endif
 
 %define _prefix  /opt/easyviz/dcmtk-3.6.4
 
@@ -120,6 +129,9 @@ rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Jan 28 2019 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1-4
+- EV-4421: Build with devtoolset-8 on RHEL/CentOS
+
 * Mon Jan 28 2019 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1-3
 - Keep debug symbols embedded to ensure they are available for easyviz-coredump
 
