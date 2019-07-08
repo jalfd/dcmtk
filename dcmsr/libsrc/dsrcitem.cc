@@ -652,8 +652,10 @@ OFCondition DSRContentItem::getTemplateIdentification(OFString &templateIdentifi
     OFCondition result = EC_IllegalCall;
     if (TreeNode != NULL)
     {
-        if (TreeNode->getValueType() == VT_Container)
-            result = TreeNode->getTemplateIdentification(templateIdentifier, mappingResource);
+        // EasyViz: The check for value type was removed to accomodate
+        // report reportcam nastiness. We really should rewrite the reportcam
+        //        if (TreeNode->getValueType() == VT_Container)
+        result = TreeNode->getTemplateIdentification(templateIdentifier, mappingResource);
     }
     return result;
 }
@@ -666,8 +668,10 @@ OFCondition DSRContentItem::getTemplateIdentification(OFString &templateIdentifi
     OFCondition result = EC_IllegalCall;
     if (TreeNode != NULL)
     {
-        if (TreeNode->getValueType() == VT_Container)
-            result = TreeNode->getTemplateIdentification(templateIdentifier, mappingResource, mappingResourceUID);
+        // EasyViz: The check for value type was removed to accomodate
+        // report reportcam nastiness. We really should rewrite the reportcam
+        //        if (TreeNode->getValueType() == VT_Container)
+        result = TreeNode->getTemplateIdentification(templateIdentifier, mappingResource, mappingResourceUID);
     }
     return result;
 }
