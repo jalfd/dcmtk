@@ -102,6 +102,9 @@
  */
 OFGlobal<OFBool> dcmPeerRequiresExactUIDCopy(OFFalse);
 
+// Global flag to enable sending an early response to improve performance,
+// at the cost of being unable to complain if something is wrong with the data.
+OFGlobal<OFBool> dcmEnableEarlyResponseCheat(OFFalse);
 
 /*
 **
@@ -408,7 +411,7 @@ DIMSE_storeProvider( T_ASC_Association *assoc,
     progress.progressBytes = 0;
     progress.totalBytes = 0;
 
-    bool earlyResponseCheat = getenv( "DCMTK_EARLYRSP_CHEAT" ) != 0;
+    bool earlyResponseCheat = dcmEnableEarlyResponseCheat.get();
 
     /* initialize the C-STORE-RSP message variable */
     memset((char*)&response, 0, sizeof(response));

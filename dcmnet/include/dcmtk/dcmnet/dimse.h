@@ -119,6 +119,7 @@ extern DCMTK_DCMNET_EXPORT OFGlobal<OFBool> dcmPeerRequiresExactUIDCopy; /* defa
  */
 extern DCMTK_DCMNET_EXPORT OFGlobal<Uint32> dcmMaxOutgoingPDUSize; /* default 2^32-1 */
 
+extern DCMTK_DCMNET_EXPORT OFGlobal<OFBool> dcmEnableEarlyResponseCheat; /* default OFFalse */
 
 /*
  * General Status Codes.
