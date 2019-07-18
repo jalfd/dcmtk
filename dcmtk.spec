@@ -137,21 +137,21 @@ rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
 %postun -p /sbin/ldconfig
 
 %changelog
-* Thu Jul 18 2019 Thomas Sondergaard <tsondergaard@vitalimages.cmo> - 3.6.4-1-11
+* Thu Jul 18 2019 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1-11
 - EV-4840: Full rename to dcmcharls that also updates DCMTKConfig.cmake
 
-* Thu Jul 18 2019 Thomas Sondergaard <tsondergaard@vitalimages.cmo> - 3.6.4-1-10
+* Thu Jul 18 2019 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1-10
 - EV-5110: Don't use environment variables to configure DCMTK
 - EV-4840: Rename charls to dcmcharls to avoid tripping up the Windows
   installer
 
-* Thu Jul 08 2019 Thomas Sondergaard <tsondergaard@vitalimages.cmo> - 3.6.4-1-9
+* Mon Jul 08 2019 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1-9
 - EV-5038: Remove check for template identifier on containers only
 
-* Thu Jun 18 2019 Thomas Sondergaard <tsondergaard@vitalimages.cmo> - 3.6.4-1-8
+* Tue Jun 18 2019 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1-8
 - EV-4954: Ensure that VR=UN sequences are read as LEI
 
-* Wed Mar 06 2019 Thomas Sondergaard <tsondergaard@vitalimages.cmo> - 3.6.4-1-7
+* Wed Mar 06 2019 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1-7
 - EV-4533: Reintroduce old DcmElementList patch from EasyViz dcmtk-cvs to make it easier to
   access dcmdataset from multiple threads
 
