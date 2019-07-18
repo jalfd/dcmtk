@@ -8,7 +8,7 @@ Name: evdcmtk-3.6.4
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
-Release: 9%{?dist}
+Release: 10%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
 Source: dcmtk-3.6.4.tar.gz
@@ -137,6 +137,17 @@ rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Jul 18 2019 Thomas Sondergaard <tsondergaard@vitalimages.cmo> - 3.6.4-1-10
+- EV-5110: Don't use environment variables to configure DCMTK
+- EV-4840: Rename charls to dcmcharls to avoid tripping up the Windows
+  installer
+
+* Thu Jul 08 2019 Thomas Sondergaard <tsondergaard@vitalimages.cmo> - 3.6.4-1-9
+- EV-5038: Remove check for template identifier on containers only
+
+* Thu Jun 18 2019 Thomas Sondergaard <tsondergaard@vitalimages.cmo> - 3.6.4-1-8
+- EV-4954: Ensure that VR=UN sequences are read as LEI
+
 * Wed Mar 06 2019 Thomas Sondergaard <tsondergaard@vitalimages.cmo> - 3.6.4-1-7
 - EV-4533: Reintroduce old DcmElementList patch from EasyViz dcmtk-cvs to make it easier to
   access dcmdataset from multiple threads
