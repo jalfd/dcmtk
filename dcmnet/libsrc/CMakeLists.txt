@@ -43,6 +43,7 @@ DCMTK_ADD_LIBRARY(dcmnet
   scpthrd.cc
   scu.cc
 )
+target_compile_definitions(dcmnet PRIVATE -DDISABLE_NAGLE_ALGORITHM)
 
 DCMTK_TARGET_LINK_MODULES(dcmnet ofstd oflog dcmdata)
 DCMTK_TARGET_LINK_LIBRARIES(dcmnet ${WRAP_LIBS})
