@@ -8,7 +8,7 @@ Name: evdcmtk-3.6.4
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
-Release: 11%{?dist}
+Release: 12%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
 Source: dcmtk-3.6.4.tar.gz
@@ -137,6 +137,9 @@ rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Aug 15 2019 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1-12
+- EV-5201: Disable Nagle's algorithm by default
+
 * Thu Jul 18 2019 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1-11
 - EV-4840: Full rename to dcmcharls that also updates DCMTKConfig.cmake
 
