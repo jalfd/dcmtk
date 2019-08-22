@@ -8,7 +8,7 @@ Name: evdcmtk-3.6.4
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
-Release: 12%{?dist}
+Release: 13%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
 Source: dcmtk-3.6.4.tar.gz
@@ -137,6 +137,9 @@ rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Aug 22 2019 Jesper Bojesen <jbojesen@vitalimages.com> - 3.6.4-1.13
+- EV-5237: Charls decompressed color images are always non-planar RGB
+
 * Thu Aug 15 2019 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1-12
 - EV-5201: Disable Nagle's algorithm by default
 
