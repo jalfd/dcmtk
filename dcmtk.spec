@@ -23,7 +23,7 @@ BuildRequires: openssl-devel
 BuildRequires: zlib-devel
 BuildRequires: libicu-devel
 BuildRequires: doxygen
-%if 0%{?rhel}
+%if 0%{?rhel} <= 7
 BuildRequires: devtoolset-8-toolchain
 Requires: devtoolset-8-runtime
 %endif
@@ -62,7 +62,7 @@ this if you are developing programs that use the dcmtk libraries.
 %setup -q -n dcmtk-3.6.4
 
 %build
-%if 0%{?rhel}
+%if 0%{?rhel} <= 7
 if [[ ! $X_SCLS =~ "devtoolset-8" ]]; then
     set +x
     echo
