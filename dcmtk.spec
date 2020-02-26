@@ -8,7 +8,7 @@ Name: evdcmtk-3.6.4
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
-Release: 13%{?dist}
+Release: 14%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
 Source: dcmtk-3.6.4.tar.gz
@@ -24,8 +24,8 @@ BuildRequires: zlib-devel
 BuildRequires: libicu-devel
 BuildRequires: doxygen
 %if 0%{?rhel} && 0%{?rhel} <= 7
-BuildRequires: devtoolset-8-toolchain
-Requires: devtoolset-8-runtime
+BuildRequires: devtoolset-9-toolchain
+Requires: devtoolset-9-runtime
 %endif
 Requires: libjpeg-turbo
 Requires: libpng
@@ -63,11 +63,11 @@ this if you are developing programs that use the dcmtk libraries.
 
 %build
 %if 0%{?rhel} && 0%{?rhel} <= 7
-if [[ ! $X_SCLS =~ "devtoolset-8" ]]; then
+if [[ ! $X_SCLS =~ "devtoolset-9" ]]; then
     set +x
     echo
-    echo 'This package must be built with devtoolset-8 on RHEL/CentOS 7.'
-    echo 'Please run "scl enable devtoolset-8 bash" before running rpmbuild.'
+    echo 'This package must be built with devtoolset-9 on RHEL/CentOS 7.'
+    echo 'Please run "scl enable devtoolset-9 bash" before running rpmbuild.'
     false
 fi
 %endif
@@ -137,6 +137,9 @@ rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Feb 26 2020 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1.14
+- EV-5947: Build with devtoolset-9
+
 * Thu Aug 22 2019 Jesper Bojesen <jbojesen@vitalimages.com> - 3.6.4-1.13
 - EV-5237: Charls decompressed color images are always non-planar RGB
 
