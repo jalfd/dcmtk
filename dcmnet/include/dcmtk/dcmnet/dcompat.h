@@ -83,15 +83,6 @@
 #include "dcmtk/dcmnet/dndefine.h"
 #include <cerrno>
 
-#ifdef HAVE_WINDOWS_H
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>  /* for Windows defines */
-#elif defined(HAVE_WINSOCK_H)
-#include <winsock.h>  /* include winsock.h directly i.e. on MacOS */
-#endif
-
 BEGIN_EXTERN_C
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
