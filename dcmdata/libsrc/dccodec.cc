@@ -288,7 +288,10 @@ OFCondition DcmCodecList::determineStartFragment(
       result = pixItem->getUint8Array(rawOffsetTable);
       if (result.good() && tableLength > 0) {
         // check if the offset table has the right size: 4 bytes for each frame (not fragment!)
-        if (tableLength != 4* OFstatic_cast(Uint32, numberOfFrames)) return EC_IllegalCall;
+        if (tableLength < 4* OFstatic_cast(Uint32, numberOfFrames)) {
+            return makeOFCondition(OFM_dcmdata, EC_CODE_CannotDetermineStartFragment, OF_error,
+                                   "Cannot determine start fragment: basic offset table too small");
+        }
 
         // byte swap offset table into local byte order. In file, the offset table is always in little endian
         swapIfNecessary(gLocalByteOrder, EBO_LittleEndian, rawOffsetTable, tableLength, sizeof(Uint32));
