@@ -121,6 +121,13 @@ BEGIN_EXTERN_C
 #endif
 END_EXTERN_C
 
+#ifdef HAVE_WINDOWS_H
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include<windows.h> /* for Windows defines */
+#endif
+
 /*
  * On DEC alpha the linker moans if a library is empty.
  * So define a dummy variable.

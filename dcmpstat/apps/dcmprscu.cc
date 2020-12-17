@@ -72,6 +72,13 @@ END_EXTERN_C
 #include <zlib.h>        /* for zlibVersion() */
 #endif
 
+#ifdef HAVE_WINDOWS_H
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h> /* for Windows defines */
+#endif
+
 #define OFFIS_CONSOLE_APPLICATION "dcmprscu"
 
 static OFLogger dcmprscuLogger = OFLog::getLogger("dcmtk.apps." OFFIS_CONSOLE_APPLICATION);
