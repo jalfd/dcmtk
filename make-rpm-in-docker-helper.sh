@@ -26,10 +26,10 @@ fi
 
 if [[ $os_version == el8 ]]; then
     dnf install -y epel-release
-    dnf --enablerepo=PowerTools install -y rpm-build gcc-c++ cmake ccache make ninja-build 'dnf-command(config-manager)'
+    dnf --enablerepo=powertools install -y rpm-build gcc-c++ cmake ccache make ninja-build 'dnf-command(config-manager)'
     dnf config-manager --disable "*epel*"
 
-    dnf --enablerepo=PowerTools builddep -y dcmtk.spec
+    dnf --enablerepo=powertools builddep -y dcmtk.spec
 
     su $DOCKER_USERNAME -c "make -f Makefile-rpm rpm"
 fi
