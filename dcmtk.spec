@@ -8,7 +8,7 @@ Name: evdcmtk-3.6.4
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
-Release: 14%{?dist}
+Release: 15%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
 Source: dcmtk-3.6.4.tar.gz
@@ -137,6 +137,11 @@ rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Dec 17 2020 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1.15
+- EV-6577: Fix DcmPixelData::getUncompressedFrame() for object that
+  has offset table in item 0 in the pixel data sequence and which does
+  not (yet) have all frames loaded.
+
 * Wed Feb 26 2020 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1.14
 - EV-5947: Build with devtoolset-9
 
