@@ -8,7 +8,7 @@ Name: evdcmtk-3.6.4
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
-Release: 15%{?dist}
+Release: 16%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
 Source: dcmtk-3.6.4.tar.gz
@@ -137,6 +137,9 @@ rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Feb 12 2021 Alexander Karaivanov <akaraivanov@vitalimages.com> -3.6.4-1.16
+- EV-7370: Fix DcmFileFormat::read() and DcmMetaInfo::read() of partial objects
+
 * Thu Dec 17 2020 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1.15
 - EV-6577: Fix DcmPixelData::getUncompressedFrame() for object that
   has offset table in item 0 in the pixel data sequence and which does
