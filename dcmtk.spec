@@ -8,7 +8,7 @@ Name: evdcmtk-3.6.4
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
-Release: 16%{?dist}
+Release: 17%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
 Source: dcmtk-3.6.4.tar.gz
@@ -91,11 +91,18 @@ fi
 	-DDCMTK_WITH_THREADS=ON \
         -DDCMTK_WITH_WRAP=FALSE \
         .
-
+%if 0%{?fedora} >= 33
+%cmake_build
+%else
 make %{?_smp_mflags}
+%endif
 
 %install
+%if 0%{?fedora} >= 33
+%cmake_install
+%else
 make DESTDIR=$RPM_BUILD_ROOT install
+%endif
 
 #Move configuration file from /usr/etc to /etc/
 #mv $RPM_BUILD_ROOT/usr/etc $RPM_BUILD_ROOT
@@ -137,7 +144,10 @@ rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
 %postun -p /sbin/ldconfig
 
 %changelog
-* Fri Feb 12 2021 Alexander Karaivanov <akaraivanov@vitalimages.com> -3.6.4-1.16
+* Sun 07 Mar 2021 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-17
+- Fix build on Fedora 33
+
+* Fri Feb 12 2021 Alexander Karaivanov <akaraivanov@vitalimages.com> - 3.6.4-1.16
 - EV-7370: Fix DcmFileFormat::read() and DcmMetaInfo::read() of partial objects
 
 * Thu Dec 17 2020 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-1.15
