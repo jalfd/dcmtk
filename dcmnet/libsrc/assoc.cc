@@ -1671,7 +1671,7 @@ ASC_selectReadableAssociation( T_ASC_Association *assocs[],
   }
   for (i=0; i < networkCount; i++)
   {
-    if (networks[i])
+    if (networks[i] && DUL_networkSocket(networks[i]->network) >= 0)
       connections[j] = new DcmTCPConnection( DUL_networkSocket(networks[i]->network) );
     else
       connections[j] = NULL;
@@ -1685,13 +1685,13 @@ ASC_selectReadableAssociation( T_ASC_Association *assocs[],
     for (i=0; i<assocCount; i++)
     {
       if (connections[j]==NULL)
-	assocs[i]=NULL;
+          assocs[i]=NULL;
       j++;
     }
     for (i=0; i<networkCount; i++)
     {
       if (connections[j]==NULL)
-	networks[i]=NULL;
+          networks[i]=NULL;
       j++;
     }
 

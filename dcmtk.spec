@@ -8,7 +8,7 @@ Name: evdcmtk-3.6.4
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
-Release: 17%{?dist}
+Release: 18%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
 Source: dcmtk-3.6.4.tar.gz
@@ -144,6 +144,9 @@ rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue 01 Jun 2021 Alexander Karaivanov <akaraivanov@vitalimages.com> - 3.6.4-1.18
+- EV-8015: Buffer overflow using movescu
+
 * Sun 07 Mar 2021 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-17
 - Fix build on Fedora 33
 
