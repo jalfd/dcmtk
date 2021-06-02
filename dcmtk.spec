@@ -144,10 +144,10 @@ rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
 %postun -p /sbin/ldconfig
 
 %changelog
-* Tue 01 Jun 2021 Alexander Karaivanov <akaraivanov@vitalimages.com> - 3.6.4-1.18
+* Tue Jun 01 2021 Alexander Karaivanov <akaraivanov@vitalimages.com> - 3.6.4-1.18
 - EV-8015: Buffer overflow using movescu
 
-* Sun 07 Mar 2021 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-17
+* Sun Mar 07 2021 Thomas Sondergaard <tsondergaard@vitalimages.com> - 3.6.4-17
 - Fix build on Fedora 33
 
 * Fri Feb 12 2021 Alexander Karaivanov <akaraivanov@vitalimages.com> - 3.6.4-1.16
