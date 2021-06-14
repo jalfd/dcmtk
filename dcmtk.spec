@@ -8,7 +8,7 @@ Name: evdcmtk-3.6.4
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
-Release: 18%{?dist}
+Release: 19%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
 Source: dcmtk-3.6.4.tar.gz
@@ -144,6 +144,9 @@ rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Jun 14 2021 Mathias Kaas-Olsen <mkolsen@vitalimages.com> - 3.6.4-1.19
+- EV-8259: Provide public access to set the element tag of a DcmObject.
+
 * Tue Jun 01 2021 Alexander Karaivanov <akaraivanov@vitalimages.com> - 3.6.4-1.18
 - EV-8015: Buffer overflow using movescu
 

@@ -402,6 +402,13 @@ class DCMTK_DCMDATA_EXPORT DcmObject
      */
     inline void setGTag(Uint16 gtag) { Tag.setGroup(gtag); }
 
+    /** @attention Extension introduced for EasyViz, used when cloning private tag blocks.
+     *
+     *  assign element tag (but not group tag) of the attribute tag for this object.
+     *  @param etag new attribute element tag
+     */
+    inline void setETag(Uint16 etag) { Tag.setElement(etag); }
+
     /** assign a new Value Representation (VR) to this object. This operation
      *  is only supported for very few subclasses derived from this class,
      *  in particular for classes handling pixel data which may either be
