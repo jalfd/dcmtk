@@ -8,13 +8,13 @@ Name: evdcmtk-3.6.4
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
-Release: 19%{?dist}
+Release: 20%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
 Source: dcmtk-3.6.4.tar.gz
 Prefix: /opt/easyviz/dcmtk-3.6.4
 
-BuildRequires: cmake
+BuildRequires: cmake3
 BuildRequires: libjpeg-turbo-devel
 BuildRequires: libpng-devel
 BuildRequires: libtiff-devel
@@ -74,7 +74,7 @@ fi
 
 %define _prefix  /opt/easyviz/dcmtk-3.6.4
 
-%cmake -DCMAKE_BUILD_TYPE:STRING="RelWithDebInfo" \
+%cmake3 -DCMAKE_BUILD_TYPE:STRING="RelWithDebInfo" \
     -DCMAKE_INSTALL_PREFIX=%{_prefix} \
     -DCMAKE_INSTALL_RPATH=%{_libdir} \
     -DBUILD_APPS=ON \

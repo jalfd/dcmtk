@@ -576,13 +576,6 @@ OFCondition DJCodecDecoder::decodeFrame(
                   }
 
                   delete jpeg;
-
-                  /* remove all used fragments from memory */
-                  while (firstFragmentUsed < pastLastFragmentUsed)
-                  {
-                    fromPixSeq->getItem(pixItem, firstFragmentUsed++);
-                    pixItem->compact();
-                  }
                 }
               }
             }

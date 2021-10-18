@@ -254,24 +254,13 @@ DcmObject *DcmList::seek( E_ListPos pos )
 
 DcmObject *DcmList::seek_to(unsigned long absolute_position)
 {
-    if (absolute_position < cardinality / 2)
-    {
-        /* iterate over first half of the list */
-        seek( ELP_first );
-        for (unsigned long i = 0; i < absolute_position; i++)
-            seek( ELP_next );
+    const unsigned long tmppos = absolute_position < cardinality ? absolute_position : cardinality;
+    DcmListNode *where = firstNode;
+    for (unsigned long i = 0; i < tmppos && where; ++i) {
+        where = where->nextNode;
     }
-    else if (absolute_position < cardinality)
-    {
-        /* iterate over second half of the list (starting from the end) */
-        seek( ELP_last );
-        for (unsigned long i = absolute_position + 1; i < cardinality; i++)
-            seek( ELP_prev );
-    } else {
-        /* invalid position */
-        currentNode = NULL;
-    }
-    return get( ELP_atpos );
+    currentNode = where;
+    return where ? where->value() : NULL;
 }
 
 

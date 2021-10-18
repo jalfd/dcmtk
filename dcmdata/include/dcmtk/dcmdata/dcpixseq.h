@@ -25,6 +25,10 @@
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
 
+#ifdef WITH_THREADS
+#include "dcmtk/ofstd/ofthread.h"
+#endif
+
 #include "dcmtk/dcmdata/dcsequen.h"
 #include "dcmtk/dcmdata/dcofsetl.h"   /* for class DcmOffsetList */
 
@@ -297,6 +301,11 @@ private:
     {
         return NULL;
     }
+
+#ifdef WITH_THREADS
+    // Take this lock to protect access to the frame list
+    mutable OFReadWriteLock frameListLock;
+#endif
 
 };
 
