@@ -399,6 +399,16 @@ OFCondition DJCodecDecoder::decode(
     }                                                                                                                       \
   }
 
+// Convert from 8bits allocated to 16 bits allocated
+static void to16BitsAllocated(Uint8 *pixels, int numbytes)
+{
+  Uint16 *dest = OFreinterpret_cast(Uint16*, pixels);
+  // By running backward we avoid issues with overlapping src and destination
+  for (int i = numbytes - 1; i >= 0; --i) {
+    dest[i] = pixels[i];
+  }
+}
+
 OFCondition DJCodecDecoder::decodeFrame(
     const DcmRepresentationParameter *fromParam,
     DcmPixelSequence *fromPixSeq,
@@ -534,6 +544,12 @@ OFCondition DJCodecDecoder::decodeFrame(
                       if (precision > 8)
                         result = createPlanarConfigurationWord(OFreinterpret_cast(Uint16*, buffer), imageColumns, imageRows);
                       else result = createPlanarConfigurationByte(OFreinterpret_cast(Uint8*, buffer), imageColumns, imageRows);
+                    }
+                  }
+
+                  if (result.good()) {
+                    if (precision <= 8 && imageBitsAllocated > 8) {
+                      to16BitsAllocated(OFreinterpret_cast(Uint8*, buffer), frameSize);
                     }
                   }
 
