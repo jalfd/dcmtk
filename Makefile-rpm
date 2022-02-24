@@ -16,4 +16,4 @@ rpm-el7:
 rpm-el8:
 	sudo docker run -ti --rm -v $$HOME:$$HOME -w $(CURDIR) \
 	-e DOCKER_UID=$$(id -u) -e DOCKER_GID=$$(id -g) -e DOCKER_USERNAME=$$(id -nu) \
-	centos:8 $(CURDIR)/make-rpm-in-docker-helper.sh el8
+	almalinux:8.5-20211112 $(CURDIR)/make-rpm-in-docker-helper.sh el8
