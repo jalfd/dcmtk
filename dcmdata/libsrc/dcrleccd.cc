@@ -98,21 +98,25 @@ OFCondition DcmRLECodecDecoder::findStartFragment(
       const auto numberOfStripes = rleHeader[0];
       if (numberOfStripes < 1 || numberOfStripes > 15) {
         startMarker = false;
+        continue;
       }
       // The first segment offset must be 64
       if (rleHeader[1] != 64) {
         startMarker = false;
+        continue;
       }
       // The following segment offsets must be >64
       for (unsigned segmentOffsetIdx = 2; segmentOffsetIdx < numberOfStripes + 1; ++segmentOffsetIdx) {
         if (rleHeader[segmentOffsetIdx] <= 64) {
           startMarker = false;
+          continue;
         }
       }
       // Unused segment offsets must be 0
       for (unsigned segmentOffsetIdx = numberOfStripes + 1; segmentOffsetIdx < 16u; ++segmentOffsetIdx) {
         if (rleHeader[segmentOffsetIdx] != 0) {
           startMarker = false;
+          continue;
         }
       }
     } while (!startMarker);
