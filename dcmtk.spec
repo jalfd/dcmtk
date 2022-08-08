@@ -4,15 +4,15 @@
 %define __strip /bin/true
 %define debug_package %{nil}
 
-Name: evdcmtk-3.6.4
+Name: evdcmtk-3.6.7
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
-Release: 22%{?dist}
+Release: 23%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
-Source: dcmtk-3.6.4.tar.gz
-Prefix: /opt/easyviz/dcmtk-3.6.4
+Source: dcmtk-3.6.7.tar.gz
+Prefix: /opt/easyviz/dcmtk-3.6.7
 
 BuildRequires: cmake3
 BuildRequires: libjpeg-turbo-devel
@@ -59,7 +59,7 @@ Development Libraries and Headers for dcmtk.  You only need to install
 this if you are developing programs that use the dcmtk libraries.
 
 %prep
-%setup -q -n dcmtk-3.6.4
+%setup -q -n dcmtk-3.6.7
 
 %build
 %if 0%{?rhel} && 0%{?rhel} <= 7
@@ -72,7 +72,7 @@ if [[ ! $X_SCLS =~ "devtoolset-9" ]]; then
 fi
 %endif
 
-%define _prefix  /opt/easyviz/dcmtk-3.6.4
+%define _prefix  /opt/easyviz/dcmtk-3.6.7
 
 %cmake3 -DCMAKE_BUILD_TYPE:STRING="RelWithDebInfo" \
     -DCMAKE_INSTALL_PREFIX=%{_prefix} \
@@ -139,6 +139,7 @@ rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
 %{_includedir}/*
 %{_libdir}/*.so
 %{_libdir}/cmake/dcmtk/
+%{_libdir}/pkgconfig/dcmtk.pc
 
 %post -p /sbin/ldconfig
 %postun -p /sbin/ldconfig

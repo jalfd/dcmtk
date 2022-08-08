@@ -5,7 +5,7 @@ all:
 
 rpm:
 	mkdir -p ~/rpmbuild/SOURCES
-	tar --exclude-backups --exclude-vcs --transform 's/^\./dcmtk-3.6.4/' -zcvf ~/rpmbuild/SOURCES/dcmtk-3.6.4.tar.gz .
+	tar --exclude-backups --exclude-vcs --transform 's/^\./dcmtk-3.6.7/' -zcvf ~/rpmbuild/SOURCES/dcmtk-3.6.7.tar.gz .
 	rpmbuild -ba dcmtk.spec
 
 rpm-el7:
