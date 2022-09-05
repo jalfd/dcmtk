@@ -91,14 +91,14 @@ fi
     -DDCMTK_WITH_THREADS=ON \
     -DDCMTK_WITH_WRAP=FALSE \
     .
-%if 0%{?fedora} >= 33
+%if 0%{?fedora} >= 33 || 0%{?rhel} >= 9
 %cmake_build
 %else
 make %{?_smp_mflags}
 %endif
 
 %install
-%if 0%{?fedora} >= 33
+%if 0%{?fedora} >= 33 || 0%{?rhel} >= 9
 %cmake_install
 %else
 make DESTDIR=$RPM_BUILD_ROOT install

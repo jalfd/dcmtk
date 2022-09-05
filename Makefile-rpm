@@ -1,7 +1,7 @@
-.PHONY: all rpm rpm-el7 rpm-el8
+.PHONY: all rpm rpm-el7 rpm-el9
 
 all:
-	@echo "Available targets: rpm, rpm-el7, rpm-el8"
+	@echo "Available targets: rpm, rpm-el7, rpm-el9"
 
 rpm:
 	mkdir -p ~/rpmbuild/SOURCES
@@ -13,7 +13,7 @@ rpm-el7:
 	-e DOCKER_UID=$$(id -u) -e DOCKER_GID=$$(id -g) -e DOCKER_USERNAME=$$(id -nu) --ulimit nofile=4096:4096 \
 	centos:7.6.1810 $(CURDIR)/make-rpm-in-docker-helper.sh el7
 
-rpm-el8:
+rpm-el9:
 	sudo docker run -ti --rm -v $$HOME:$$HOME -w $(CURDIR) \
 	-e DOCKER_UID=$$(id -u) -e DOCKER_GID=$$(id -g) -e DOCKER_USERNAME=$$(id -nu) --ulimit nofile=4096:4096 \
-	almalinux:8.5-20211112 $(CURDIR)/make-rpm-in-docker-helper.sh el8
+	almalinux:9.0-20220901 $(CURDIR)/make-rpm-in-docker-helper.sh el9

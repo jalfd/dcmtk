@@ -4,11 +4,11 @@ set -e
 
 os_version=$1
 
-sed -i -e 's/\(%dist .el[0-9]*\).centos/\1/ ' /etc/rpm/macros.dist
 groupadd -g $DOCKER_GID $DOCKER_USERNAME
 useradd -u $DOCKER_UID -g $DOCKER_GID -G wheel --no-create-home $DOCKER_USERNAME
 
 if [[ $os_version == el7 ]]; then
+    sed -i -e 's/\(%dist .el[0-9]*\).centos/\1/ ' /etc/rpm/macros.dist
     # /usr/lib64/ccache/{gcc,cc,g++,c++} symlinks are only created when the
     # system compiler is installed. We don't use it, though, we use devtoolset-9
     # gcc.
@@ -24,12 +24,12 @@ if [[ $os_version == el7 ]]; then
     su $DOCKER_USERNAME -c "scl enable devtoolset-9 'make -f Makefile-rpm rpm'"
 fi
 
-if [[ $os_version == el8 ]]; then
+if [[ $os_version == el9 ]]; then
     dnf install -y epel-release
-    dnf --enablerepo=powertools install -y rpm-build gcc-c++ cmake ccache make ninja-build 'dnf-command(config-manager)'
+    dnf --enablerepo=crb install -y rpm-build gcc-c++ cmake ccache make ninja-build 'dnf-command(config-manager)'
     dnf config-manager --disable "*epel*"
 
-    dnf --enablerepo=powertools builddep -y dcmtk.spec
+    dnf --enablerepo=crb builddep -y dcmtk.spec
 
     su $DOCKER_USERNAME -c "make -f Makefile-rpm rpm"
 fi
