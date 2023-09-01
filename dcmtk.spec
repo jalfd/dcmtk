@@ -8,7 +8,7 @@ Name: evdcmtk-3.6.7
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
-Release: 23%{?dist}
+Release: 24%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
 Source: dcmtk-3.6.7.tar.gz
