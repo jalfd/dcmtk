@@ -4,15 +4,15 @@
 %define __strip /bin/true
 %define debug_package %{nil}
 
-Name: evdcmtk-3.6.7
+Name: evdcmtk-3.6.8
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
 Release: 24%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
-Source: dcmtk-3.6.7.tar.gz
-Prefix: /opt/easyviz/dcmtk-3.6.7
+Source: dcmtk-3.6.8.tar.gz
+Prefix: /opt/easyviz/dcmtk-3.6.8
 
 BuildRequires: cmake3
 BuildRequires: libjpeg-turbo-devel
@@ -59,7 +59,7 @@ Development Libraries and Headers for dcmtk.  You only need to install
 this if you are developing programs that use the dcmtk libraries.
 
 %prep
-%setup -q -n dcmtk-3.6.7
+%setup -q -n dcmtk-3.6.8
 
 %build
 %if 0%{?rhel} && 0%{?rhel} <= 7
@@ -72,7 +72,7 @@ if [[ ! $X_SCLS =~ "devtoolset-9" ]]; then
 fi
 %endif
 
-%define _prefix  /opt/easyviz/dcmtk-3.6.7
+%define _prefix  /opt/easyviz/dcmtk-3.6.8
 
 %cmake3 -DCMAKE_BUILD_TYPE:STRING="RelWithDebInfo" \
     -DCMAKE_INSTALL_PREFIX=%{_prefix} \
@@ -109,10 +109,10 @@ make DESTDIR=$RPM_BUILD_ROOT install
 
 # Move the dicom dictionary to the documentation directory.
 # We have the dictionary compiled in so reading it is a noop anyway.
-mv $RPM_BUILD_ROOT/%{_prefix}/share/dcmtk/dicom.dic $RPM_BUILD_ROOT/%{_prefix}/share/doc/dcmtk/dicom.dic
+# mv $RPM_BUILD_ROOT/%{_prefix}/share/dcmtk/dicom.dic $RPM_BUILD_ROOT/%{_prefix}/share/doc/dcmtk/dicom.dic
 
 # Remove zero-length file
-rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
+# rm $RPM_BUILD_ROOT/%{_datadir}/dcmtk/wlistdb/OFFIS/lockfile
 
 %files
 %dir %{_prefix}/%{_sysconfdir}/dcmtk/
