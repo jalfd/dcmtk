@@ -234,51 +234,64 @@ OFCondition DcmCodec::updateImageType(DcmItem *dataset)
   return EC_Normal;
 }
 
+OFCondition
+DcmCodec::findStartFragment (Uint32 /*frameNo*/,
+				  Sint32 /*numberOfFrames*/,
+				  DcmPixelSequence * /*fromPixSeq*/,
+				  Uint32& /*currentItem*/) const {
+  return EC_IllegalCall;
+}
 
-OFCondition DcmCodec::determineStartFragment(
+/** Deprecated, static, use the version in DcmCodecList instead */
+OFCondition
+DcmCodec::determineStartFragment (Uint32 frameNo,
+				  Sint32 numberOfFrames,
+				  DcmPixelSequence * fromPixSeq,
+				  Uint32& currentItem) {
+  return DcmCodecList::determineStartFragment (
+    DcmXfer (EXS_JPEGProcess1),
+    frameNo,
+    numberOfFrames,
+    fromPixSeq,
+    currentItem);
+}
+
+OFCondition DcmCodecList::determineStartFragment(
+  const DcmXfer &xfer,
   Uint32 frameNo,
   Sint32 numberOfFrames,
   DcmPixelSequence * fromPixSeq,
   Uint32& currentItem)
 {
-  Uint32 numberOfFragments = OFstatic_cast(Uint32, fromPixSeq->card());
-  if (numberOfFrames < 1 || numberOfFragments <= OFstatic_cast(Uint32, numberOfFrames) || frameNo >= OFstatic_cast(Uint32, numberOfFrames))
-    return EC_IllegalCall;
+    // Note. frameNo is not the dicom frame number. It is 0 based
+    // Note. This function must work even with an incomplete dataset,
+    // i.e, a dataset still being read from the network. Basically we
+    // must allow decompression of a frame as soon as the required
+    // fragments are available.
 
-  if (frameNo == 0)
-  {
-    // simple case: first frame is always at second fragment
-    currentItem = 1;
-    return EC_Normal;
-  }
+    Uint32 numberOfFragments = fromPixSeq->card();
+    if (numberOfFrames < 1 ||
+	frameNo >= OFstatic_cast(Uint32, numberOfFrames))
+      return EC_IllegalCall;
 
-  if (numberOfFragments == OFstatic_cast(Uint32, numberOfFrames) + 1)
-  {
-    // standard case: there is one fragment per frame.
-    currentItem = frameNo + 1;
-    return EC_Normal;
-  }
+    if (numberOfFragments < 1)
+      return EC_TagNotFound;
 
-  // non-standard case: multiple fragments per frame.
-  // We now try to consult the offset table.
-  DcmPixelItem *pixItem = NULL;
-  Uint8 *rawOffsetTable = NULL;
+    // Try to consult the offset table if present.
+    DcmPixelItem *pixItem = NULL;
+    Uint8 * rawOffsetTable = NULL;
 
-  // get first pixel item, i.e. the fragment containing the offset table
-  OFCondition result = fromPixSeq->getItem(pixItem, 0);
-  if (result.good())
-  {
-    Uint32 tableLength = pixItem->getLength();
-    result = pixItem->getUint8Array(rawOffsetTable);
-    if (result.good())
-    {
-      // check if the offset table is empty
-      if (tableLength == 0)
-        result = makeOFCondition(OFM_dcmdata, EC_CODE_CannotDetermineStartFragment, OF_error, "Cannot determine start fragment: basic offset table is empty");
-      // check if the offset table has the right size: 4 bytes for each frame (not fragment!)
-      else if (tableLength != 4 * OFstatic_cast(Uint32, numberOfFrames))
-        result = makeOFCondition(OFM_dcmdata, EC_CODE_CannotDetermineStartFragment, OF_error, "Cannot determine start fragment: basic offset table has wrong size");
-      else {
+    // get first pixel item, i.e. the fragment containing the offset table
+    OFCondition result = fromPixSeq->getItem(pixItem, 0);
+    if (result.good()) {
+      Uint32 tableLength = pixItem->getLength();
+      result = pixItem->getUint8Array(rawOffsetTable);
+      if (result.good() && tableLength > 0) {
+        // check if the offset table has the right size: 4 bytes for each frame (not fragment!)
+        if (tableLength < 4* OFstatic_cast(Uint32, numberOfFrames)) {
+            return makeOFCondition(OFM_dcmdata, EC_CODE_CannotDetermineStartFragment, OF_error,
+                                   "Cannot determine start fragment: basic offset table too small");
+        }
 
         // byte swap offset table into local byte order. In file, the offset table is always in little endian
         swapIfNecessary(gLocalByteOrder, EBO_LittleEndian, rawOffsetTable, tableLength, sizeof(Uint32));
@@ -290,7 +303,7 @@ OFCondition DcmCodec::determineStartFragment(
         Uint32 offset = offsetTable[frameNo];
 
         // OK, now let's look if we can find a fragment that actually corresponds to that offset.
-        // In counter we compute the offset for each frame by adding all fragment lengths
+        // In counter we compute the offset for each frame by adding all fragment lenghts
         Uint32 counter = 0;
         // now iterate over all fragments except the index table. The start of the first fragment
         // is defined as zero.
@@ -305,24 +318,44 @@ OFCondition DcmCodec::determineStartFragment(
 
           // access pixel item in order to determine its length
           result = fromPixSeq->getItem(pixItem, idx);
-          if (result.bad())
-            return makeOFCondition(OFM_dcmdata, EC_CODE_CannotDetermineStartFragment, OF_error, "Cannot determine start fragment: cannot access referenced pixel item");
+          if (result.bad()) return result;
 
           // add pixel item length plus 8 bytes overhead for the item tag and length field
           counter += pixItem->getLength() + 8;
         }
 
-        // bad luck. We have not found a fragment corresponding to the offset in the offset table.
-        // Either we cannot correctly add numbers, or they cannot :-)
-        result = makeOFCondition(OFM_dcmdata, EC_CODE_CannotDetermineStartFragment, OF_error, "Cannot determine start fragment: possibly wrong value in basic offset table");
-      }
-    } else
-      result = makeOFCondition(OFM_dcmdata, EC_CODE_CannotDetermineStartFragment, OF_error, "Cannot determine start fragment: cannot access content of basic offset table");
-  } else
-    result = makeOFCondition(OFM_dcmdata, EC_CODE_CannotDetermineStartFragment, OF_error, "Cannot determine start fragment: cannot access basic offset table (first item)");
-  return result;
-}
+        // Bad luck. We have not found a fragment corresponding to the offset in the offset table.
+        // Either we cannot correctly add numbers, or they cannot, or the dataset is incomplete.
+        return EC_TagNotFound;
+      } else {
+	// We have no frame-offset table available. Must consult the codec list to parse the
+	// fragment list.
 
+#ifdef WITH_THREADS
+	if (! codecLock.initialized()) return EC_IllegalCall; // should never happen
+#endif
+	result = EC_CannotChangeRepresentation;
+
+	// acquire read lock on codec list.  Will block if some write lock is currently active.
+#ifdef WITH_THREADS
+	OFReadWriteLocker locker(codecLock);
+	if (0 == locker.rdlock())
+	{
+#endif
+	  for (OFListIterator(DcmCodecList *) it = registeredCodecs.begin();
+	       it != registeredCodecs.end();
+	       ++it) {
+	    if ((*it)->codec->canChangeCoding(xfer.getXfer(), EXS_LittleEndianExplicit))
+	      return (*it)->codec->findStartFragment (
+		frameNo, numberOfFrames, fromPixSeq, currentItem);
+	  }
+#ifdef WITH_THREADS
+	} else result = EC_IllegalCall;
+#endif
+      }
+    }
+    return result;
+}
 
 /* --------------------------------------------------------------- */
 

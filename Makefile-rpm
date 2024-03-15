@@ -1,0 +1,19 @@
+.PHONY: all rpm rpm-el7 rpm-el9
+
+all:
+	@echo "Available targets: rpm, rpm-el7, rpm-el9"
+
+rpm:
+	mkdir -p ~/rpmbuild/SOURCES
+	tar --exclude-backups --exclude-vcs --transform 's/^\./dcmtk-3.6.8/' -zcvf ~/rpmbuild/SOURCES/dcmtk-3.6.8.tar.gz .
+	rpmbuild -ba dcmtk.spec
+
+rpm-el7:
+	sudo docker run -ti --rm -v $$HOME:$$HOME -w $(CURDIR) \
+	-e DOCKER_UID=$$(id -u) -e DOCKER_GID=$$(id -g) -e DOCKER_USERNAME=$$(id -nu) --ulimit nofile=4096:4096 \
+	centos:7.6.1810 $(CURDIR)/make-rpm-in-docker-helper.sh el7
+
+rpm-el9:
+	sudo docker run -ti --rm -v $$HOME:$$HOME -w $(CURDIR) \
+	-e DOCKER_UID=$$(id -u) -e DOCKER_GID=$$(id -g) -e DOCKER_USERNAME=$$(id -nu) --ulimit nofile=4096:4096 \
+	almalinux:9.3-20231124 $(CURDIR)/make-rpm-in-docker-helper.sh el9

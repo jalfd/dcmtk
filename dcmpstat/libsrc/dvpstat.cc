@@ -409,7 +409,7 @@ OFCondition DVPresentationState::getPrintBitmap(void *bitmap,
            ((signed long)height != renderedImageBottom - renderedImageTop + 1))
         {
           DicomImage *img = image;
-          image = img->createScaledImage(width, height, 0 /*no interpolation*/, 0 /*ignore aspect ratio*/);
+          image = img->createScaledImage(width, height, 1 /*interpolation*/, 0 /*ignore aspect ratio*/);
           if (img != currentImage)
             delete img;
         }

@@ -61,6 +61,21 @@ public:
     const DcmStack & objStack,
     OFBool& removeOldRep) const;
 
+  /** determine the index number (starting with zero) of the compressed pixel data fragment
+   *  corresponding to the given frame (also starting with zero). This implementation is for
+   *  RLE compressed streams
+   *  @param frameNo frame number
+   *  @param numberOfFrames number of frames of this image
+   *  @param fromPixSeq compressed pixel sequence
+   *  @param currentItem index of the compressed pixel data fragment. Only set on success.
+   *  @return EC_Normal if successful, an error code otherwise
+   */
+  virtual OFCondition findStartFragment(
+    Uint32 frameNo,
+    Sint32 numberOfFrames,
+    DcmPixelSequence * fromPixSeq,
+    Uint32& currentItem) const;
+
   /** decompresses a single frame from the given pixel sequence and
    *  stores the result in the given buffer.
    *  @param fromParam representation parameter of current compressed

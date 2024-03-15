@@ -111,6 +111,9 @@ static OFCondition
 streamUserInfo(DUL_USERINFO * userInfo, unsigned char *b,
                unsigned long *length);
 static OFCondition
+streamAsync(PRV_ASYNCOPERATIONS *async, unsigned char *b, unsigned long *len);
+
+static OFCondition
 streamMaxLength(DUL_MAXLENGTH * max, unsigned char *b,
                 unsigned long *length);
 static OFCondition
@@ -676,6 +679,20 @@ constructSubItem(char *name, unsigned char type,
     return EC_Normal;
 }
 
+static OFCondition
+constructAsync(DUL_ASSOCIATESERVICEPARAMETERS *params,
+	       PRV_ASYNCOPERATIONS *async, unsigned long *rtnLength)
+{
+    async->type = 0x53;
+    async->rsv1 = 0;
+    async->length = 0x4;
+    async->maximumOperationsInvoked = params->maximumOperationsInvoked;
+    async->maximumOperationsPerformed = params->maximumOperationsPerformed;
+
+    *rtnLength = 8;
+
+    return EC_Normal;
+}
 
 /* constructPresentationContext
 **
@@ -845,7 +862,16 @@ constructUserInfo(unsigned char type, DUL_ASSOCIATESERVICEPARAMETERS * params,
     totalUserInfoLength += length;
     *rtnLen += length;
 
-    // user info sub-item 53H (async operations) is not yet implemented!
+    // user info sub-item 53H (async operations), only add if set
+    if (params->maximumOperationsInvoked >= 0 &&
+        params->maximumOperationsPerformed >= 0) {
+      userInfo->asyncOperations = new PRV_ASYNCOPERATIONS;
+      cond = constructAsync(params, userInfo->asyncOperations, &length);
+      if (cond.bad())
+	return cond;
+      totalUserInfoLength += length;
+      *rtnLen += length;
+    }
 
     // construct user info sub-item 55H: implementation version name
     if (type == DUL_TYPEASSOCIATERQ) {
@@ -1298,7 +1324,14 @@ streamUserInfo(DUL_USERINFO * userInfo, unsigned char *b,
     b += subLength;
     *length += subLength;
 
-    // user info sub-item 53H (async operations) is not yet implemented!
+    // user info sub-item 53H (async operations)
+    if (userInfo->asyncOperations) {
+      cond = streamAsync(userInfo->asyncOperations, b, &subLength);
+      if (cond.bad())
+	return cond;
+      b += subLength;
+      *length += subLength;
+    }
 
 #ifdef OLD_USER_INFO_SUB_ITEM_ORDER
     /* prior DCMTK releases did not encode user information sub items
@@ -1525,5 +1558,24 @@ streamExtNeg(SOPClassExtendedNegotiationSubItem* extNeg, unsigned char *b, unsig
 
     *len = 4 + extNeg->itemLength;
 
+    return EC_Normal;
+}
+
+static OFCondition
+streamAsync(PRV_ASYNCOPERATIONS *async, unsigned char *b, unsigned long *len)
+{
+    if (!async)
+        return EC_Normal;
+
+    *b++ = async->type;
+    *b++ = async->rsv1;
+    COPY_SHORT_BIG(async->length,b);
+    b += 2;
+    COPY_SHORT_BIG(async->maximumOperationsInvoked, b);
+    b += 2;
+    COPY_SHORT_BIG(async->maximumOperationsPerformed, b);
+    b += 2;
+
+    *len = 8;
     return EC_Normal;
 }

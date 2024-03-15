@@ -95,6 +95,12 @@
 #ifdef HAVE_STAT_H
 #include <stat.h>
 #endif
+#ifdef HAVE_WINDOWS_H
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h> /* for Windows defines */
+#endif
 
 #include "dcmtk/ofstd/ofstd.h"
 #include "dcmtk/dcmnet/diutil.h"

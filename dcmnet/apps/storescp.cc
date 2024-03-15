@@ -37,7 +37,11 @@ END_EXTERN_C
 #include <cerrno>
 
 #ifdef HAVE_WINDOWS_H
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <direct.h>      /* for _mkdir() */
+#include <windows.h> /* for Windows defines */
 #endif
 
 #include "dcmtk/ofstd/ofstd.h"

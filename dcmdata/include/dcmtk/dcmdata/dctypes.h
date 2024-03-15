@@ -24,7 +24,11 @@
 #define DCTYPES_H
 
 #include "dcmtk/config/osconfig.h"    /* make sure OS specific configuration is included first */
+#include "dcmtk/ofstd/oftypes.h"
+
+#ifdef DCMTK_BUILD_IN_PROGRESS
 #include "dcmtk/oflog/oflog.h"
+#endif
 #include "dcmtk/dcmdata/dcdefine.h"
 
 BEGIN_EXTERN_C
@@ -34,6 +38,7 @@ BEGIN_EXTERN_C
 #endif
 END_EXTERN_C
 
+#ifdef DCMTK_BUILD_IN_PROGRESS
 /*
 ** Logging
 */
@@ -47,6 +52,7 @@ extern DCMTK_DCMDATA_EXPORT OFLogger DCM_dcmdataLogger;
 #define DCMDATA_ERROR(msg) OFLOG_ERROR(DCM_dcmdataLogger, msg)
 #define DCMDATA_FATAL(msg) OFLOG_FATAL(DCM_dcmdataLogger, msg)
 
+#endif
 /*
 ** Macro Definitions
 */

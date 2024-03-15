@@ -98,6 +98,13 @@ void DcmPixelSequence::print(STD_NAMESPACE ostream &out,
                              const char *pixelFileName,
                              size_t *pixelCounter)
 {
+#ifdef WITH_THREADS
+    OFReadWriteLocker locker(frameListLock);
+    if (locker.wrlock() != 0) {
+        throw EC_IllegalCall;
+    }
+#endif
+
     /* print pixel sequence start line */
     if (flags & DCMTypes::PF_showTreeStructure)
     {
@@ -233,6 +240,13 @@ OFCondition DcmPixelSequence::makeSubObject(DcmObject *&subObject,
 OFCondition DcmPixelSequence::insert(DcmPixelItem *item,
                                      unsigned long where)
 {
+#ifdef WITH_THREADS
+    OFReadWriteLocker locker(frameListLock);
+    if (locker.wrlock() != 0) {
+        return EC_IllegalCall;
+    }
+#endif
+
     errorFlag = EC_Normal;
     if (item != NULL)
     {
@@ -268,6 +282,12 @@ OFCondition DcmPixelSequence::insert(DcmPixelItem *item,
 OFCondition DcmPixelSequence::getItem(DcmPixelItem *&item,
                                       const unsigned long num)
 {
+#ifdef WITH_THREADS
+    OFReadWriteLocker locker(frameListLock);
+    if (locker.wrlock() != 0) {
+        return EC_IllegalCall;
+    }
+#endif
     errorFlag = EC_Normal;
     item = OFstatic_cast(DcmPixelItem*, itemList->seek_to(num));  // read item from list
     if (item == NULL)
@@ -282,6 +302,12 @@ OFCondition DcmPixelSequence::getItem(DcmPixelItem *&item,
 OFCondition DcmPixelSequence::remove(DcmPixelItem *&item,
                                      const unsigned long num)
 {
+#ifdef WITH_THREADS
+    OFReadWriteLocker locker(frameListLock);
+    if (locker.wrlock() != 0) {
+        return EC_IllegalCall;
+    }
+#endif
     errorFlag = EC_Normal;
     item = OFstatic_cast(DcmPixelItem*, itemList->seek_to(num));  // read item from list
     if (item != NULL)
@@ -299,6 +325,12 @@ OFCondition DcmPixelSequence::remove(DcmPixelItem *&item,
 
 OFCondition DcmPixelSequence::remove(DcmPixelItem *item)
 {
+#ifdef WITH_THREADS
+    OFReadWriteLocker locker(frameListLock);
+    if (locker.wrlock() != 0) {
+        return EC_IllegalCall;
+    }
+#endif
     errorFlag = EC_IllegalCall;
     if (!itemList->empty() && item != NULL)
     {

@@ -103,25 +103,26 @@ selectReadable(
 {
     T_ASC_Association *assocList[2];
     int assocCount = 0;
+    T_ASC_Network *networkList[1];
+    int networkCount=0;
 
     if (net != NULL && subAssoc == NULL) {
-        if (ASC_associationWaiting(net, 0)) {
-            /* association request waiting on network */
-            return 2;
-        }
+      networkList[0] = net;
+      networkCount=1;
     }
+
     assocList[0] = assoc;
     assocCount = 1;
     assocList[1] = subAssoc;
+
     if (subAssoc != NULL) assocCount++;
-    if (subAssoc == NULL) {
-        timeout = 1;            /* poll wait until an assoc req or move rsp */
-    } else {
-        if (blockMode == DIMSE_BLOCKING) {
-            timeout = 10000;    /* a long time */
-        }
+    if (blockMode == DIMSE_BLOCKING) {
+      timeout = 10000;    /* a long time */
     }
-    if (!ASC_selectReadableAssociation(assocList, assocCount, timeout)) {
+    else
+      timeout = 0;
+
+    if (!ASC_selectReadableAssociation(assocList, assocCount, networkList, networkCount, timeout)) {
         /* none readable */
         return 0;
     }
@@ -133,6 +134,10 @@ selectReadable(
         /* sub association readable */
         return 2;
     }
+    if (networkList[0] != NULL) {
+        return 2;
+    }
+
     /* should not be reached */
     return 0;
 }

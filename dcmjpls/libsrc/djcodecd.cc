@@ -435,26 +435,13 @@ OFCondition DJLSDecoderBase::decodeFrame(
         {
           DCMJPLS_WARN("Color Transformation " << params.colorTransform << " is a non-standard HP/JPEG-LS extension");
         }
-        if (imagePlanarConfiguration == 1 && params.ilv != ILV_NONE)
-        {
-          // The dataset says this should be planarConfiguration == 1, but
-          // it isn't -> convert it.
-          DCMJPLS_DEBUG("different planar configuration in JPEG-LS bitstream, converting to \"1\"");
+
+	if (imagePlanarConfiguration == 1) {
           if (bytesPerSample == 1)
             result = createPlanarConfiguration1Byte(OFreinterpret_cast(Uint8*, buffer), imageColumns, imageRows);
           else
             result = createPlanarConfiguration1Word(OFreinterpret_cast(Uint16*, buffer), imageColumns, imageRows);
-        }
-        else if (imagePlanarConfiguration == 0 && params.ilv != ILV_SAMPLE && params.ilv != ILV_LINE)
-        {
-          // The dataset says this should be planarConfiguration == 0, but
-          // it isn't -> convert it.
-          DCMJPLS_DEBUG("different planar configuration in JPEG-LS bitstream, converting to \"0\"");
-          if (bytesPerSample == 1)
-            result = createPlanarConfiguration0Byte(OFreinterpret_cast(Uint8*, buffer), imageColumns, imageRows);
-          else
-            result = createPlanarConfiguration0Word(OFreinterpret_cast(Uint16*, buffer), imageColumns, imageRows);
-        }
+      }
       }
 
       if (result.good())

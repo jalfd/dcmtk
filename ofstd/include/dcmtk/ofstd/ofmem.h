@@ -41,21 +41,16 @@ using OFunique_ptr = std::unique_ptr<ARGS...>;
 #define OF_SHARED_PTR_COUNTER_TYPE size_t
 #elif defined HAVE_INTERLOCKED_INCREMENT && defined HAVE_INTERLOCKED_DECREMENT
 #if _MSC_VER <= 1200
-#define OF_SHARED_PTR_COUNTER_TYPE LONG
+#define OF_SHARED_PTR_COUNTER_TYPE long
 #else
-#define OF_SHARED_PTR_COUNTER_TYPE volatile LONG
+#define OF_SHARED_PTR_COUNTER_TYPE volatile long
 #endif
+extern "C" long _InterlockedDecrement(volatile long*);
+extern "C" long _InterlockedIncrement(volatile long*);
 #else
 #define OF_SHARED_PTR_COUNTER_TYPE size_t
 #define OF_SHARED_PTR_NEED_MUTEX 1
 #include "dcmtk/ofstd/ofthread.h"
-#endif
-
-#ifdef HAVE_WINDOWS_H
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
 #endif
 
 /** OFshared_ptr is a smart pointer that retains shared ownership of an object through a pointer.
@@ -204,7 +199,7 @@ private:
 #ifdef HAVE_SYNC_ADD_AND_FETCH
             __sync_add_and_fetch( &m_Count, 1 );
 #elif defined HAVE_INTERLOCKED_INCREMENT
-            InterlockedIncrement( &m_Count );
+            _InterlockedIncrement( &m_Count );
 #else
             m_Mutex.lock();
             ++m_Count;
@@ -221,7 +216,7 @@ private:
 #ifdef HAVE_SYNC_SUB_AND_FETCH
             return !__sync_sub_and_fetch( &m_Count, 1 );
 #elif defined HAVE_INTERLOCKED_DECREMENT
-            return !InterlockedDecrement( &m_Count );
+            return !_InterlockedDecrement( &m_Count );
 #else
             m_Mutex.lock();
             const OFBool result = !--m_Count;

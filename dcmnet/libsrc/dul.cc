@@ -2505,6 +2505,10 @@ DUL_DumpParams(OFString& ret_str, DUL_ASSOCIATESERVICEPARAMETERS * params)
     str << "REQ VERSION:  " << params->callingImplementationVersionName << OFendl
         << "ACC IMP UID:  " << params->calledImplementationClassUID << OFendl;
     str << dump_uid(params->calledImplementationClassUID, "%14s") << OFendl;
+    if (params->maximumOperationsInvoked >= 0 && params->maximumOperationsPerformed >= 0) {
+      str << "Max operations invoked: " << params->maximumOperationsInvoked << OFendl;
+      str << "Max operations performed: " << params->maximumOperationsPerformed << OFendl;
+    }
     str << "ACC VERSION:  " << params->calledImplementationVersionName << OFendl
         << "Requested Presentation Ctx" << OFendl;
     str << dump_presentation_ctx(&params->requestedPresentationContext);
@@ -2774,8 +2778,8 @@ clearRequestorsParams(DUL_ASSOCIATESERVICEPARAMETERS * params)
     params->calledPresentationAddress[0] = '\0';
     params->requestedPresentationContext = NULL;
     params->acceptedPresentationContext = NULL;
-    params->maximumOperationsInvoked = 0;
-    params->maximumOperationsPerformed = 0;
+    params->maximumOperationsInvoked = -1;
+    params->maximumOperationsPerformed = -1;
     params->callingImplementationClassUID[0] = '\0';
     params->callingImplementationVersionName[0] = '\0';
     params->requestedExtNegList = NULL;

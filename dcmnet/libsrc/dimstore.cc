@@ -102,6 +102,9 @@
  */
 OFGlobal<OFBool> dcmPeerRequiresExactUIDCopy(OFFalse);
 
+// Global flag to enable sending an early response to improve performance,
+// at the cost of being unable to complain if something is wrong with the data.
+OFGlobal<OFBool> dcmEnableEarlyResponseCheat(OFFalse);
 
 /*
 **
@@ -408,6 +411,8 @@ DIMSE_storeProvider( T_ASC_Association *assoc,
     progress.progressBytes = 0;
     progress.totalBytes = 0;
 
+    bool earlyResponseCheat = dcmEnableEarlyResponseCheat.get();
+
     /* initialize the C-STORE-RSP message variable */
     memset((char*)&response, 0, sizeof(response));
     response.DimseStatus = STATUS_STORE_Success;      /* assume */
@@ -418,6 +423,11 @@ DIMSE_storeProvider( T_ASC_Association *assoc,
     response.opts = (O_STORE_AFFECTEDSOPCLASSUID | O_STORE_AFFECTEDSOPINSTANCEUID);
     if (request->opts & O_STORE_RQ_BLANK_PADDING) response.opts |= O_STORE_RSP_BLANK_PADDING;
     if (dcmPeerRequiresExactUIDCopy.get()) response.opts |= O_STORE_PEER_REQUIRES_EXACT_UID_COPY;
+
+    /* send a C-STORE-RSP message over the network to the other DICOM application */
+    if (earlyResponseCheat)
+        cond = DIMSE_sendStoreResponse(assoc, presIdCmd, request,
+                                       &response, statusDetail);
 
     /* set up callback routine */
     if (callback != NULL) {
@@ -511,10 +521,11 @@ DIMSE_storeProvider( T_ASC_Association *assoc,
     }
 
     /* send a C-STORE-RSP message over the network to the other DICOM application */
-    OFCondition cond2 = DIMSE_sendStoreResponse(assoc, presIdCmd, request, &response, statusDetail);
-
-    /* if we already had an error condition, don't overwrite */
-    if (cond.good()) cond = cond2;
+    if (!earlyResponseCheat) {
+      OFCondition cond2 = DIMSE_sendStoreResponse(assoc, presIdCmd, request, &response, statusDetail);
+      /* if we already had an error condition, don't overwrite */
+      if (cond.good()) cond = cond2;
+    }
 
     /* return result value */
     return cond;

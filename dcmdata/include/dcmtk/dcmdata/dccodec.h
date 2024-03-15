@@ -142,6 +142,28 @@ public:
     Uint32 bufSize,
     OFString& decompressedColorModel) const = 0;
 
+/** determine the index number (starting with zero) of the compressed pixel data fragment
+   *  corresponding to the given frame (also starting with zero). The default implementation
+   *  always returns IllegalCall.
+   *  @param frameNo frame number
+   *  @param numberOfFrames number of frames of this image
+   *  @param fromPixSeq compressed pixel sequence
+   *  @param currentItem index of the compressed pixel data fragment. Only set on success.
+   *  @return EC_Normal if successful, an error code otherwise
+   */
+  virtual OFCondition findStartFragment(
+    Uint32 frameNo,
+    Sint32 numberOfFrames,
+    DcmPixelSequence * fromPixSeq,
+    Uint32& currentItem) const;
+
+  /** Deprecated. Only works with jpeg xfer syntaxes. Use the version in DcmCodecList instead */
+  static OFCondition determineStartFragment(
+    Uint32 frameNo,
+    Sint32 numberOfFrames,
+    DcmPixelSequence * fromPixSeq,
+    Uint32& currentItem);
+
   /** compresses the given uncompressed DICOM image and stores
    *  the result in the given pixSeq element.
    *  @param pixelData pointer to the uncompressed image data in OW format
@@ -291,20 +313,6 @@ public:
     const char *codingSchemeDesignator,
     const char *codeValue,
     const char *codeMeaning);
-
-  /** determine the index number (starting with zero) of the compressed pixel data fragment
-   *  corresponding to the given frame (also starting with zero)
-   *  @param frameNo frame number
-   *  @param numberOfFrames number of frames of this image
-   *  @param fromPixSeq compressed pixel sequence
-   *  @param currentItem index of compressed pixel data fragment returned in this parameter on success
-   *  @return EC_Normal if successful, an error code otherwise
-   */
-  static OFCondition determineStartFragment(
-    Uint32 frameNo,
-    Sint32 numberOfFrames,
-    DcmPixelSequence * fromPixSeq,
-    Uint32& currentItem);
 };
 
 
@@ -418,6 +426,22 @@ public:
     void *buffer,
     Uint32 bufSize,
     OFString& decompressedColorModel);
+
+  /** determine the index number (starting with zero) of the compressed pixel data fragment
+   *  corresponding to the given frame (also starting with zero)
+   *  @param xfer The transfer syntax
+   *  @param frameNo frame number
+   *  @param numberOfFrames number of frames of this image
+   *  @param fromPixSeq compressed pixel sequence
+   *  @param currentItem index of compressed pixel data fragment returned in this parameter on success
+   *  @return EC_Normal if successful, an error code otherwise
+   */
+  static OFCondition determineStartFragment(
+    const DcmXfer &xfer,
+    Uint32 frameNo,
+    Sint32 numberOfFrames,
+    DcmPixelSequence * fromPixSeq,
+    Uint32& currentItem);
 
   /** looks for a codec that is able to encode from the given transfer syntax
    *  and calls the encode() method of the codec.  A read lock on the list of

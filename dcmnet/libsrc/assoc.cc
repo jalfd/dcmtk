@@ -325,6 +325,9 @@ ASC_createAssociationParameters(T_ASC_Parameters ** params,
     (*params)->theirMaxPDUReceiveSize = 0;      /* not yet negotiated */
     (*params)->modeCallback = NULL;
 
+    (*params)->DULparams.maximumOperationsInvoked = -1;
+    (*params)->DULparams.maximumOperationsPerformed = -1;
+
     /* set something unusable */
     ASC_setPresentationAddresses(*params,
                                  "calling Presentation Address",
@@ -514,6 +517,20 @@ ASC_getRejectParameters(T_ASC_Parameters * params,
         }
     }
     return EC_Normal;
+}
+
+void
+ASC_setAsyncOperations(T_ASC_Parameters *params, int invoked, int performed)
+{
+    params->DULparams.maximumOperationsInvoked = invoked;
+    params->DULparams.maximumOperationsPerformed = performed;
+}
+
+void
+ASC_getAsyncOperations(T_ASC_Parameters *params, int &invoked, int &performed)
+{
+    invoked = params->DULparams.maximumOperationsInvoked;
+    performed = params->DULparams.maximumOperationsPerformed;
 }
 
 OFString&
@@ -1628,6 +1645,61 @@ ASC_dumpConnectionParameters(OFString &str, T_ASC_Association *association)
  */
 
 typedef DcmTransportConnection *P_DcmTransportConnection;
+
+OFBool
+ASC_selectReadableAssociation( T_ASC_Association *assocs[],
+                               int assocCount,
+                               T_ASC_Network *networks[],
+                               int networkCount,
+                               int timeout )
+{
+  if (assocCount <= 0)
+    return OFFalse;
+
+  P_DcmTransportConnection *connections = new P_DcmTransportConnection[assocCount+networkCount];
+  if (connections == NULL)
+    return OFFalse;
+
+  int i, j=0;
+  for (i=0; i < assocCount; i++)
+  {
+    if (assocs[i])
+      connections[j] = DUL_getTransportConnection(assocs[i]->DULassociation);
+    else
+      connections[j] = NULL;
+    j++;
+  }
+  for (i=0; i < networkCount; i++)
+  {
+    if (networks[i] && DUL_networkSocket(networks[i]->network) >= 0)
+      connections[j] = new DcmTCPConnection( DUL_networkSocket(networks[i]->network) );
+    else
+      connections[j] = NULL;
+    j++;
+  }
+
+  OFBool result = DcmTransportConnection::selectReadableAssociation(connections, j, timeout);
+  if (result)
+  {
+    int j = 0;
+    for (i=0; i<assocCount; i++)
+    {
+      if (connections[j]==NULL)
+          assocs[i]=NULL;
+      j++;
+    }
+    for (i=0; i<networkCount; i++)
+    {
+      if (connections[j]==NULL)
+          networks[i]=NULL;
+      j++;
+    }
+
+  }
+  delete[] connections;
+
+  return result;
+}
 
 OFBool
 ASC_selectReadableAssociation(T_ASC_Association* assocs[],

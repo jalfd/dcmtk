@@ -1013,6 +1013,11 @@ AE_3_AssociateConfirmationAccept(PRIVATE_NETWORKKEY ** /*network*/,
 
         }
 
+        if (assoc.userInfo.asyncOperations) {
+            service->maximumOperationsInvoked = assoc.userInfo.asyncOperations->maximumOperationsInvoked;
+            service->maximumOperationsPerformed = assoc.userInfo.asyncOperations->maximumOperationsPerformed;
+        }
+
         destroyAssociatePDUPresentationContextList(&assoc.presentationContextList);
         destroyUserInformationLists(&assoc.userInfo);
         service->peerMaxPDU = assoc.userInfo.maxLength.maxLength;
@@ -1211,6 +1216,11 @@ AE_6_ExamineAssociateRequest(PRIVATE_NETWORKKEY ** /*network*/,
             service->requestedExtNegList = new SOPClassExtendedNegotiationSubItemList;
             if (service->requestedExtNegList == NULL) return EC_MemoryExhausted;
             appendList(*assoc.userInfo.extNegList, *service->requestedExtNegList);
+        }
+
+        if (assoc.userInfo.asyncOperations) {
+            service->maximumOperationsInvoked = assoc.userInfo.asyncOperations->maximumOperationsInvoked;
+            service->maximumOperationsPerformed = assoc.userInfo.asyncOperations->maximumOperationsPerformed;
         }
 
         /* user identity negotiation: Remember request values in association parameters (copy)*/

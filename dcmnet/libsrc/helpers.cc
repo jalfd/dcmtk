@@ -63,6 +63,8 @@ destroyUserInformationLists(DUL_USERINFO * userInfo)
     }
     LST_Destroy(&userInfo->SCUSCPRoleList);
 
+    delete userInfo->asyncOperations;
+
     /* extended negotiation */
     delete userInfo->extNegList;
     userInfo->extNegList = NULL;

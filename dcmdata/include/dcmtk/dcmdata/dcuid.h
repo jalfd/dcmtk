@@ -214,10 +214,10 @@ DCMTK_DCMDATA_EXPORT unsigned long dcmGuessModalityBytes(const char *sopClassUID
  */
 
 /// implementation version name for this version of the toolkit
-#define OFFIS_DTK_IMPLEMENTATION_VERSION_NAME   "OFFIS_DCMTK_" PACKAGE_VERSION_NUMBER_TO_STRING(PACKAGE_VERSION_NUMBER)
+#define OFFIS_DTK_IMPLEMENTATION_VERSION_NAME   "EV_DCMTK_" PACKAGE_VERSION_NUMBER_TO_STRING(PACKAGE_VERSION_NUMBER)
 
 /// implementation version name for this version of the toolkit, used for files received in "bit preserving" mode
-#define OFFIS_DTK_IMPLEMENTATION_VERSION_NAME2  "OFFIS_DCMBP_" PACKAGE_VERSION_NUMBER_TO_STRING(PACKAGE_VERSION_NUMBER)
+#define OFFIS_DTK_IMPLEMENTATION_VERSION_NAME2  "EV_DCMBP_" PACKAGE_VERSION_NUMBER_TO_STRING(PACKAGE_VERSION_NUMBER)
 
 /// release date of current toolkit release
 #ifdef DCMTK_BUILD_DATE

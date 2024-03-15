@@ -57,6 +57,73 @@ OFBool DcmRLECodecDecoder::canChangeCoding(
   return OFFalse;
 }
 
+OFCondition DcmRLECodecDecoder::findStartFragment(
+    Uint32 frameNo,
+    Sint32 numberOfFrames,
+    DcmPixelSequence * fromPixSeq,
+    Uint32& currentItem) const
+{
+  // We have no frame-offset table available. Assume that if we can read the
+  // RLE header we have a start-of-frame item
+  // See Dicom PS 3.5 section G.5 for the header format
+
+  Uint32 itemNo = 0;
+  for (Uint32 i = 0; i <= frameNo; ++i) {
+    bool startMarker;
+    do {
+      startMarker = true;
+      itemNo++;
+      DcmPixelItem *pixItem = nullptr;
+      if (fromPixSeq->getItem(pixItem, itemNo).bad()) {
+        return EC_TagNotFound;  // Most likely dataset is incomplete
+      }
+
+      Uint8 *content = nullptr;
+      pixItem->getUint8Array(content);
+      if (!content) {
+        return EC_TagNotFound;  // Most likely dataset is incomplete
+      }
+
+      Uint32 contentLength = pixItem->getLength();
+      if (contentLength < 64) {
+        startMarker = false;
+        continue;
+      }
+
+      Uint32 rleHeader[16];
+      memcpy(rleHeader, content, 64);
+      swapIfNecessary(gLocalByteOrder, EBO_LittleEndian, rleHeader, 16*OFstatic_cast(Uint32, sizeof(Uint32)), sizeof(Uint32));
+
+      // Check that number of stripes in RLE header matches our expectation
+      const auto numberOfStripes = rleHeader[0];
+      if (numberOfStripes < 1 || numberOfStripes > 15) {
+        startMarker = false;
+        continue;
+      }
+      // The first segment offset must be 64
+      if (rleHeader[1] != 64) {
+        startMarker = false;
+        continue;
+      }
+      // The following segment offsets must be >64
+      for (unsigned segmentOffsetIdx = 2; segmentOffsetIdx < numberOfStripes + 1; ++segmentOffsetIdx) {
+        if (rleHeader[segmentOffsetIdx] <= 64) {
+          startMarker = false;
+          continue;
+        }
+      }
+      // Unused segment offsets must be 0
+      for (unsigned segmentOffsetIdx = numberOfStripes + 1; segmentOffsetIdx < 16u; ++segmentOffsetIdx) {
+        if (rleHeader[segmentOffsetIdx] != 0) {
+          startMarker = false;
+          continue;
+        }
+      }
+    } while (!startMarker);
+  }
+  currentItem = itemNo;
+  return EC_Normal;
+}
 
 OFCondition DcmRLECodecDecoder::decode(
     const DcmRepresentationParameter * /* fromRepParam */,
@@ -517,7 +584,7 @@ OFCondition DcmRLECodecDecoder::decodeFrame(
     // If the user has passed a zero, try to find out ourselves.
     if (currentItem == 0 && result.good())
     {
-        result = determineStartFragment(frameNo, imageFrames, fromPixSeq, currentItem);
+        result = DcmCodecList::determineStartFragment(EXS_RLELossless, frameNo, imageFrames, fromPixSeq, currentItem);
         if (result.bad())
             return result;
     }

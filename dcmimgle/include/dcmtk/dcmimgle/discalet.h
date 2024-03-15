@@ -29,7 +29,7 @@
 
 #include "dcmtk/dcmimgle/ditranst.h"
 #include "dcmtk/dcmimgle/dipxrept.h"
-
+#include <cmath>
 
 /*---------------------*
  *  macro definitions  *
@@ -519,168 +519,63 @@ class DiScaleTemplate
         delete[] y_fact;
     }
 
+    // EasyViz bilinear interpolation helper.
+    float
+      interpolateLin (float x0, float x1, float offset) {
+      return x0*(1.0-offset) + x1*offset;
+    };
 
-    /** free scaling method with interpolation
+    /** free scaling method with bilinear interpolation.
      *
      ** @param  src   array of pointers to source image pixels
      *  @param  dest  array of pointers to destination image pixels
      */
-    void interpolatePixel(const T *src[],
-                          T *dest[])
-    {
-        DCMIMGLE_DEBUG("using scaling algorithm with interpolation from pbmplus toolkit");
-        if ((this->Src_X != Columns) || (this->Src_Y != Rows))
-        {
-            DCMIMGLE_ERROR("interpolated scaling and clipping at the same time not implemented ... ignoring clipping region");
-            this->Src_X = Columns;            // temporarily removed 'const' for 'Src_X' in class 'DiTransTemplate'
-            this->Src_Y = Rows;               //                             ... 'Src_Y' ...
-        }
+    void interpolatePixel(const T *src[], T *dest[]) {
+      const unsigned long f_size = (unsigned long)Rows * (unsigned long)Columns;
+      const float scaleY (this->Src_Y);
+      const float originY (Top-0.5f);
+      const float scaleX (this->Src_X);
+      const float originX (Left-0.5f);
+      for (int j = 0; j < this->Planes; j++) {
+	const T *sp = src[j];
+	T * const dp = dest[j];
+	for (Uint32 f = 0; f < this->Frames; ++f) {
+	  const T *sf = sp + f*f_size;
+	  T * const df = dp + f*f_size;
 
-        /*
-         *   based on scaling algorithm from "Extended Portable Bitmap Toolkit" (pbmplus10dec91)
-         *   (adapted to be used with signed pixel representation, inverse images - mono1,
-         *    various bit depths, multi-frame and multi-plane/color images)
-         */
-
-        Uint16 x;
-        Uint16 y;
-        const T *p;
-        T *q;
-        const T *sp = NULL;                         // initialization avoids compiler warning
-        const T *fp;
-        T *sq;
-
-        const unsigned long sxscale = OFstatic_cast(unsigned long, (OFstatic_cast(double, this->Dest_X) / OFstatic_cast(double, this->Src_X)) * SCALE_FACTOR);
-        const unsigned long syscale = OFstatic_cast(unsigned long, (OFstatic_cast(double, this->Dest_Y) / OFstatic_cast(double, this->Src_Y)) * SCALE_FACTOR);
-        const signed long maxvalue = DicomImageClass::maxval(this->Bits - isSigned());
-
-        T *xtemp = new T[this->Src_X];
-        signed long *xvalue = new signed long[this->Src_X];
-
-        if ((xtemp == NULL) || (xvalue == NULL))
-        {
-            DCMIMGLE_ERROR("can't allocate temporary buffers for interpolation scaling");
-            this->clearPixel(dest);
-        } else {
-            for (int j = 0; j < this->Planes; ++j)
-            {
-                fp = src[j];
-                sq = dest[j];
-                for (unsigned long f = this->Frames; f != 0; --f)
-                {
-                    for (x = 0; x < this->Src_X; ++x)
-                        xvalue[x] = HALFSCALE_FACTOR;
-                    unsigned long yfill = SCALE_FACTOR;
-                    unsigned long yleft = syscale;
-                    int yneed = 1;
-                    int ysrc = 0;
-                    for (y = 0; y < this->Dest_Y; ++y)
-                    {
-                        if (this->Src_Y == this->Dest_Y)
-                        {
-                            sp = fp;
-                            for (x = this->Src_X, p = sp, q = xtemp; x != 0; --x)
-                                *(q++) = *(p++);
-                            fp += this->Src_X;
-                        }
-                        else
-                        {
-                            while (yleft < yfill)
-                            {
-                                if (yneed && (ysrc < OFstatic_cast(int, this->Src_Y)))
-                                {
-                                    sp = fp;
-                                    fp += this->Src_X;
-                                    ++ysrc;
-                                }
-                                for (x = 0, p = sp; x < this->Src_X; ++x)
-                                    xvalue[x] += yleft * OFstatic_cast(signed long, *(p++));
-                                yfill -= yleft;
-                                yleft = syscale;
-                                yneed = 1;
-                            }
-                            if (yneed && (ysrc < OFstatic_cast(int, this->Src_Y)))
-                            {
-                                sp = fp;
-                                fp += this->Src_X;
-                                ++ysrc;
-                                yneed = 0;
-                            }
-                            signed long v;
-                            for (x = 0, p = sp, q = xtemp; x < this->Src_X; ++x)
-                            {
-                                v = xvalue[x] + yfill * OFstatic_cast(signed long, *(p++));
-                                v /= SCALE_FACTOR;
-                                *(q++) = OFstatic_cast(T, (v > maxvalue) ? maxvalue : v);
-                                xvalue[x] = HALFSCALE_FACTOR;
-                            }
-                            yleft -= yfill;
-                            if (yleft == 0)
-                            {
-                                yleft = syscale;
-                                yneed = 1;
-                            }
-                            yfill = SCALE_FACTOR;
-                        }
-                        if (this->Src_X == this->Dest_X)
-                        {
-                            for (x = this->Dest_X, p = xtemp, q = sq; x != 0; --x)
-                                *(q++) = *(p++);
-                            sq += this->Dest_X;
-                        }
-                        else
-                        {
-                            signed long v = HALFSCALE_FACTOR;
-                            unsigned long xfill = SCALE_FACTOR;
-                            unsigned long xleft;
-                            int xneed = 0;
-                            q = sq;
-                            for (x = 0, p = xtemp; x < this->Src_X; ++x, ++p)
-                            {
-                                xleft = sxscale;
-                                while (xleft >= xfill)
-                                {
-                                    if (xneed)
-                                    {
-                                        ++q;
-                                        v = HALFSCALE_FACTOR;
-                                    }
-                                    v += xfill * OFstatic_cast(signed long, *p);
-                                    v /= SCALE_FACTOR;
-                                    *q = OFstatic_cast(T, (v > maxvalue) ? maxvalue : v);
-                                    xleft -= xfill;
-                                    xfill = SCALE_FACTOR;
-                                    xneed = 1;
-                                }
-                                if (xleft > 0)
-                                {
-                                    if (xneed)
-                                    {
-                                        ++q;
-                                        v = HALFSCALE_FACTOR;
-                                        xneed = 0;
-                                    }
-                                    v += xleft * OFstatic_cast(signed long, *p);
-                                    xfill -= xleft;
-                                }
-                            }
-                            if (xfill > 0)
-                                v += xfill * OFstatic_cast(signed long, *(--p));
-                            if (!xneed)
-                            {
-                                v /= SCALE_FACTOR;
-                                *q = OFstatic_cast(T, (v > maxvalue) ? maxvalue : v);
-                            }
-                            sq += this->Dest_X;
-                        }
-                    }
-                }
-            }
-        }
-        delete[] xtemp;
-        delete[] xvalue;
+	  for (Uint16 y = 0; y < this->Dest_Y-1; ++y) {
+	    float sampleY = (float(y+0.5f))/float(this->Dest_Y);
+	    sampleY = sampleY*scaleY + originY;
+	    int idy0 = int (std::floor (sampleY));
+	    int idy1 = idy0 + 1;
+	    if (idy1 >= Rows)
+	      idy1 = idy0 = Rows - 1;
+	    else if (idy0 < 0)
+	      idy0 = idy1 = 0;
+	    float offsetY = float (sampleY - idy0);
+	    for (Uint16 x = 0; x < this->Dest_X; ++x) {
+	      float sampleX = (float(x+0.5f))/float(this->Dest_X);
+	      sampleX = sampleX*scaleX + originX;
+	      int idx0 = int(std::floor(sampleX));
+	      int idx1 = idx0 + 1;
+	      if (idx1 >= Columns)
+		idx1 = idx0 = Columns - 1;
+	      else if (idx0 < 0)
+		idx0 = idx1 = 0;
+	      float offsetX = float (sampleX - idx0);
+	      df[y*this->Dest_X + x] =
+		T (roundf(interpolateLin(interpolateLin(float (sf[idy0*Columns + idx0]),
+							float (sf[idy0*Columns + idx1]),
+							offsetX),
+					 interpolateLin(float (sf[idy1*Columns + idx0]),
+							float (sf[idy1*Columns + idx1]),
+							offsetX),
+					 offsetY)));
+	    }
+	  }
+	}
+      }
     }
-
 
     /** free scaling method with interpolation (only for magnification)
      *

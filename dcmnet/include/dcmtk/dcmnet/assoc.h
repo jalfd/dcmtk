@@ -516,6 +516,9 @@ DCMTK_DCMNET_EXPORT void ASC_getAcceptedExtNegList(T_ASC_Parameters* params, SOP
 DCMTK_DCMNET_EXPORT void ASC_setRequestedExtNegList(T_ASC_Parameters* params, SOPClassExtendedNegotiationSubItemList* extNegList);
 DCMTK_DCMNET_EXPORT void ASC_setAcceptedExtNegList(T_ASC_Parameters* params, SOPClassExtendedNegotiationSubItemList* extNegList);
 
+DCMTK_DCMNET_EXPORT void ASC_setAsyncOperations(T_ASC_Parameters *params, int invoked, int performed);
+DCMTK_DCMNET_EXPORT void ASC_getAsyncOperations(T_ASC_Parameters *params, int &invoked, int &performed);
+
 /* user identity negotiation */
 
 /* function that returns user identity request structure from association
@@ -667,6 +670,15 @@ DCMTK_DCMNET_EXPORT OFBool
 ASC_selectReadableAssociation(
     T_ASC_Association* assocs[],
     int assocCount, int timeout);
+
+/* overload: select both on open associations and networks */
+DCMTK_DCMNET_EXPORT OFBool
+ASC_selectReadableAssociation(T_ASC_Association *assocs[],
+			      int assocCount,
+			      T_ASC_Network *networks[],
+			      int networkCount,
+			      int timeoout);
+
 
 /*
  * Association Messages

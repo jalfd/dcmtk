@@ -389,14 +389,15 @@ endif()
   CHECK_INCLUDE_FILE_CXX("fenv.h" HAVE_FENV_H)
   CHECK_INCLUDE_FILE_CXX("iterator" HAVE_ITERATOR_HEADER)
 
-if(NOT APPLE)
-  # poll on macOS is unreliable, it first did not exist, then was broken until
-  # fixed in 10.9 only to break again in 10.12.
-  CHECK_INCLUDE_FILE_CXX("poll.h" DCMTK_HAVE_POLL)
-  if(DCMTK_HAVE_POLL)
-    add_definitions(-DDCMTK_HAVE_POLL=1)
-  endif()
-endif()
+# EasyViz, poll doesn't work with multiplexing
+#if(NOT APPLE)
+#  # poll on macOS is unreliable, it first did not exist, then was broken until
+#  # fixed in 10.9 only to break again in 10.12.
+#  CHECK_INCLUDE_FILE_CXX("poll.h" DCMTK_HAVE_POLL)
+#  if(DCMTK_HAVE_POLL)
+#    add_definitions(-DDCMTK_HAVE_POLL=1)
+#  endif()
+#endif()
 
   # This mimics the autoconf test. There are systems out there
   # (e.g. FreeBSD and NeXT) where tcp.h can't be compiled on its own.
