@@ -100,7 +100,6 @@ public:
 		errorFlag = EC_DoubledTag;
 	    } else {
 		currentIndex = it - list.begin();
-		delete *it;
 		*it = elem;
 	    }
 	} else {
