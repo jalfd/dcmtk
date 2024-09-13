@@ -8,7 +8,7 @@ Name: evdcmtk-3.6.8
 Summary: Offis DICOM Toolkit (DCMTK)
 # The version number is not used.
 Version: 1
-Release: 23%{?dist}
+Release: 24%{?dist}
 License: BSD
 Group: Karos Health/EasyViz
 Source: dcmtk-3.6.8.tar.gz
@@ -145,6 +145,9 @@ make DESTDIR=$RPM_BUILD_ROOT install
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Sep 13 2024 Jesper Alf Dam <Jesper.Dam@mi.medical.canon> - 3.6.4-1.24
+- Nobug: FIXMENM: try to extract iterator from Dcm[Element]List
+
 * Mon Jun 14 2021 Mathias Kaas-Olsen <mkolsen@vitalimages.com> - 3.6.4-1.19
 - EV-8259: Provide public access to set the element tag of a DcmObject.
 
