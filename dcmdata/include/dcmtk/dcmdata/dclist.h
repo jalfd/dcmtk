@@ -51,6 +51,7 @@ public:
 
 private:
     friend class DcmList;
+    friend class DcmListPosition;
 
     /// pointer to next node in double-linked list
     DcmListNode *nextNode;
@@ -88,18 +89,13 @@ typedef enum
     ELP_next
 } E_ListPos;
 
-/** double-linked list class that maintains pointers to DcmObject instances.
- *  The remove operation does not delete the object pointed to, however,
- *  the destructor will delete all elements pointed to
- */
-class DCMTK_DCMDATA_EXPORT DcmList 
+class DcmList;
+
+class DCMTK_DCMDATA_EXPORT DcmListPosition
 {
 public:
     /// constructor
-    DcmList();
-
-    /// destructor
-    ~DcmList();
+    DcmListPosition(DcmList *list_);
 
     /** insert object at end of list
      *  @param obj pointer to object
@@ -126,12 +122,6 @@ public:
      */
     DcmObject *remove();
 
-    /** get pointer to element in list at given position
-     *  @param pos position indicator
-     *  @return pointer to object
-     */
-    DcmObject *get(     E_ListPos pos = ELP_atpos );
-
     /** seek within element in list to given position
      *  (i.e. set current element to given position)
      *  @param pos position indicator
@@ -146,6 +136,51 @@ public:
      */
     DcmObject *seek_to(unsigned long absolute_position);
 
+    /** get pointer to element in list at given position
+     *  @param pos position indicator
+     *  @return pointer to object
+     */
+    DcmObject *get(     E_ListPos pos = ELP_atpos );
+
+    void reset();
+    void reset(DcmListNode *new_pos);
+
+    /// return true if current node exists, false otherwise
+    inline OFBool valid(void) const { return currentNode != NULL; }
+
+private:
+    DcmList *list;
+
+    /// pointer to current node in list
+    DcmListNode *currentNode;
+};
+
+/** double-linked list class that maintains pointers to DcmObject instances.
+ *  The remove operation does not delete the object pointed to, however,
+ *  the destructor will delete all elements pointed to
+ */
+class DCMTK_DCMDATA_EXPORT DcmList : public DcmListPosition
+{
+public:
+    /// constructor
+    DcmList();
+
+    /// destructor
+    ~DcmList();
+
+    /** insert object relative to current position and indicator
+     *  @param obj pointer to object
+     *  @param pos node to insert before
+     *  @return pointer inserted node
+     */
+    DcmListNode *insertBefore(DcmObject *obj,
+                              DcmListNode *node);
+
+    /** remove current entry from list, return element
+     *  @return pointer to removed element, which is not deleted
+     */
+    DcmObject *removeNode(DcmListNode *node);
+
     /** Remove and delete all elements from list. Thus, the 
      *  elements' memory is also freed by this operation. The list
      *  is empty after calling this function.
@@ -158,8 +193,9 @@ public:
     /// return true if list is empty, false otherwise
     inline OFBool empty(void) const { return firstNode == NULL; }
 
-    /// return true if current node exists, false otherwise
-    inline OFBool valid(void) const { return currentNode != NULL; }
+    DcmListNode *head();
+
+    DcmListNode *reverseHead();
 
 private:
     /// pointer to first node in list
@@ -167,9 +203,6 @@ private:
 
     /// pointer to last node in list
     DcmListNode *lastNode;
-
-    /// pointer to current node in list
-    DcmListNode *currentNode;
 
     /// number of elements in list
     unsigned long cardinality;
@@ -181,6 +214,7 @@ private:
      * @param newList documented to avoid doxygen warnings
      */
     DcmList(const DcmList &newList);
+    friend class DcmListPosition;
 };
 
 #endif  // DCLIST_H

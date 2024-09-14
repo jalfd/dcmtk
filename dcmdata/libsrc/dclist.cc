@@ -45,6 +45,9 @@ DcmListNode::~DcmListNode()
 {
 }
 
+DcmListPosition::DcmListPosition(DcmList *list_)
+: list(list_),
+currentNode(nullptr) {}
 
 // *****************************************
 // *** DcmList *****************************
@@ -52,9 +55,9 @@ DcmListNode::~DcmListNode()
 
 
 DcmList::DcmList()
-  : firstNode(NULL),
+  : DcmListPosition(this),
+    firstNode(NULL),
     lastNode(NULL),
-    currentNode(NULL),
     cardinality(0)
 {
 }
@@ -74,7 +77,7 @@ DcmList::~DcmList()
             // delete temp->objNodeValue;         // dangerous!
             delete temp;
         } while ( firstNode != NULL );
-        currentNode = firstNode = lastNode = NULL;
+        firstNode = lastNode = NULL;
     }
 }
 
@@ -82,20 +85,23 @@ DcmList::~DcmList()
 // ********************************
 
 
-DcmObject *DcmList::append( DcmObject *obj )
+DcmObject *DcmListPosition::append( DcmObject *obj )
 {
-    if ( obj != NULL )
+    if (obj != NULL)
     {
-        if ( DcmList::empty() )                        // list is empty !
-            currentNode = firstNode = lastNode = new DcmListNode(obj);
-        else
-        {
-            DcmListNode *node = new DcmListNode(obj);
-            lastNode->nextNode = node;
-            node->prevNode = lastNode;
-            currentNode = lastNode = node;
-        }
-        cardinality++;
+        currentNode = list->insertBefore(obj, nullptr);
+    } // obj == NULL
+    return obj;
+}
+
+// ********************************
+
+
+DcmObject *DcmListPosition::prepend( DcmObject *obj )
+{
+    if (obj != NULL)
+    {
+        currentNode = list->insertBefore(obj, list->head());
     } // obj == NULL
     return obj;
 }
@@ -104,106 +110,105 @@ DcmObject *DcmList::append( DcmObject *obj )
 // ********************************
 
 
-DcmObject *DcmList::prepend( DcmObject *obj )
+DcmObject *DcmListPosition::insert( DcmObject *obj, E_ListPos pos )
 {
     if ( obj != NULL )
     {
-        if ( DcmList::empty() )                        // list is empty !
-            currentNode = firstNode = lastNode = new DcmListNode(obj);
-        else
+        if ( list->empty() )                 // list is empty !
         {
-            DcmListNode *node = new DcmListNode(obj);
-            node->nextNode = firstNode;
-            firstNode->prevNode = node;
-            currentNode = firstNode = node;
+            currentNode = list->insertBefore(obj, nullptr);
+            return obj;
         }
-        cardinality++;
-    } // obj == NULL
-    return obj;
-}
 
-
-// ********************************
-
-
-DcmObject *DcmList::insert( DcmObject *obj, E_ListPos pos )
-{
-    if ( obj != NULL )
-    {
-        if ( DcmList::empty() )                 // list is empty !
+        if (pos == ELP_last)
+            append(obj); // cardinality++;
+        else if (pos == ELP_first)
+            prepend(obj); // cardinality++;
+        else if (!valid())
+            // set current node to the end if there is no predecessor or
+            // there are successors to be determined
+            append(obj);          // cardinality++;
+        else if (pos == ELP_prev) // insert before current node
         {
-            currentNode = firstNode = lastNode = new DcmListNode(obj);
-            cardinality++;
+            currentNode = list->insertBefore(obj, currentNode);
         }
-        else {
-            if ( pos==ELP_last )
-                DcmList::append( obj );         // cardinality++;
-            else if ( pos==ELP_first )
-                DcmList::prepend( obj );        // cardinality++;
-            else if ( !DcmList::valid() )
-                // set current node to the end if there is no predecessor or
-                // there are successors to be determined
-                DcmList::append( obj );         // cardinality++;
-            else if ( pos == ELP_prev )         // insert before current node
-            {
-                DcmListNode *node = new DcmListNode(obj);
-                if ( currentNode->prevNode == NULL )
-                    firstNode = node;           // insert at the beginning
-                else
-                    currentNode->prevNode->nextNode = node;
-                node->prevNode = currentNode->prevNode;
-                node->nextNode = currentNode;
-                currentNode->prevNode = node;
-                currentNode = node;
-                cardinality++;
-            }
-            else //( pos==ELP_next || pos==ELP_atpos )
-                                                // insert after current node
-            {
-                DcmListNode *node = new DcmListNode(obj);
-                if ( currentNode->nextNode == NULL )
-                    lastNode = node;            // append to the end
-                else
-                    currentNode->nextNode->prevNode = node;
-                node->nextNode = currentNode->nextNode;
-                node->prevNode = currentNode;
-                currentNode->nextNode = node;
-                currentNode = node;
-                cardinality++;
-            }
+        else //( pos==ELP_next || pos==ELP_atpos )
+             // insert after current node
+        {
+            currentNode = list->insertBefore(obj, currentNode->nextNode);
         }
     } // obj == NULL
     return obj;
 }
 
+DcmObject *DcmListPosition::remove()
+{
+    DcmListNode *node_to_remove = currentNode;
+    currentNode = currentNode->nextNode;
+    return list->removeNode(node_to_remove);
+}
+
+DcmListNode *DcmList::insertBefore( DcmObject *obj, DcmListNode *pos )
+{
+    DcmListNode *new_node = new DcmListNode(obj);
+
+    if (empty())
+    {
+        firstNode = lastNode = new_node;
+    }
+    else if (!pos)
+    {
+        lastNode->nextNode = new_node;
+        new_node->prevNode = lastNode;
+        lastNode = new_node;
+    }
+    else
+    {
+        DcmListNode *old_prev = pos->prevNode;
+        pos->prevNode = new_node;
+        new_node->nextNode = pos;
+
+        new_node->prevNode = old_prev;
+        if (old_prev) {
+            old_prev->nextNode = new_node;
+        }
+        if (firstNode == pos)
+        {
+            firstNode = new_node;
+        }
+    }
+
+    DcmListPosition::reset(new_node);
+    ++cardinality;
+    return new_node;
+}
 
 // ********************************
 
-
-DcmObject *DcmList::remove()
+DcmObject *DcmList::removeNode(DcmListNode *node)
 {
     DcmObject *tempobj;
     DcmListNode *tempnode;
 
     if ( DcmList::empty() )                        // list is empty !
         return NULL;
-    else if ( !DcmList::valid() )
+    else if ( !node )
         return NULL;                               // current node is 0
     else
     {
-        tempnode = currentNode;
+        tempnode = node;
 
-        if ( currentNode->prevNode == NULL )
-            firstNode = currentNode->nextNode;     // delete first element
+        if ( node->prevNode == NULL )
+            firstNode = node->nextNode;     // delete first element
         else
-            currentNode->prevNode->nextNode = currentNode->nextNode;
+            node->prevNode->nextNode = node->nextNode;
 
-        if ( currentNode->nextNode == NULL )
-            lastNode = currentNode->prevNode;      // delete last element
+        if ( node->nextNode == NULL )
+            lastNode = node->prevNode;      // delete last element
         else
-            currentNode->nextNode->prevNode = currentNode->prevNode;
+            node->nextNode->prevNode = node->prevNode;
 
-        currentNode = currentNode->nextNode;
+        DcmListPosition::reset(node->nextNode);
         tempobj = tempnode->value();
         delete tempnode;
         cardinality--;
@@ -215,54 +220,63 @@ DcmObject *DcmList::remove()
 // ********************************
 
 
-DcmObject *DcmList::get( E_ListPos pos )
+DcmObject *DcmListPosition::get( E_ListPos pos )
 {
     return seek( pos );
 }
 
+void DcmListPosition::reset()
+{
+    reset(nullptr);
+}
+
+void DcmListPosition::reset(DcmListNode *new_pos)
+{
+    currentNode = new_pos;
+}
 
 // ********************************
 
 
-DcmObject *DcmList::seek( E_ListPos pos )
+DcmObject *DcmListPosition::seek( E_ListPos pos )
 {
     switch (pos)
     {
         case ELP_first :
-            currentNode = firstNode;
+            currentNode = list->head();
             break;
         case ELP_last :
-            currentNode = lastNode;
+            currentNode = list->reverseHead();
             break;
         case ELP_prev :
-            if ( DcmList::valid() )
+            if ( valid() )
                 currentNode = currentNode->prevNode;
             break;
         case ELP_next :
-            if ( DcmList::valid() )
+            if ( valid() )
                 currentNode = currentNode->nextNode;
             break;
         default:
             break;
     }
-    return DcmList::valid() ? currentNode->value() : NULL;
+    list->reset(currentNode);
+    return valid() ? currentNode->value() : nullptr;
 }
-
 
 // ********************************
 
 
-DcmObject *DcmList::seek_to(unsigned long absolute_position)
+DcmObject *DcmListPosition::seek_to(unsigned long absolute_position)
 {
-    const unsigned long tmppos = absolute_position < cardinality ? absolute_position : cardinality;
-    DcmListNode *where = firstNode;
+    const unsigned long tmppos = absolute_position < list->card() ? absolute_position : list->card();
+    DcmListNode *where = list->head();
     for (unsigned long i = 0; i < tmppos && where; ++i) {
         where = where->nextNode;
     }
     currentNode = where;
+    list->reset(currentNode);
     return where ? where->value() : NULL;
 }
-
 
 // ********************************
 
@@ -292,6 +306,16 @@ void DcmList::deleteAllElements()
     // reset all attributes for later use
     firstNode = NULL;
     lastNode = NULL;
-    currentNode = NULL;
+    DcmListPosition::reset();
     cardinality = 0;
 }
+
+    DcmListNode *DcmList::head()
+    {
+        return firstNode;
+    }
+
+    DcmListNode *DcmList::reverseHead()
+    {
+        return lastNode;
+    }
