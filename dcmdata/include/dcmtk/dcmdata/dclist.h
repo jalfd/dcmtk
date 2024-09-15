@@ -159,7 +159,7 @@ private:
  *  The remove operation does not delete the object pointed to, however,
  *  the destructor will delete all elements pointed to
  */
-class DCMTK_DCMDATA_EXPORT DcmList : public DcmListPosition
+class DCMTK_DCMDATA_EXPORT DcmList : private DcmListPosition
 {
 public:
     /// constructor
