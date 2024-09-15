@@ -1208,12 +1208,13 @@ void DcmDirectoryRecord::print(STD_NAMESPACE ostream &out,
         /* print item content */
         if (!elementList->empty())
         {
+            DcmListPosition pos(elementList);
             DcmObject *dO;
-            elementList->seek(ELP_first);
+            pos.seek(ELP_first);
             do {
-                dO = elementList->get();
+                dO = pos.get();
                 dO->print(out, flags, level + 1, pixelFileName, pixelCounter);
-            } while (elementList->seek(ELP_next));
+            } while (pos.seek(ELP_next));
         }
         if (lowerLevelList->card() > 0)
             lowerLevelList->print(out, flags, level + 1);
@@ -1243,12 +1244,13 @@ void DcmDirectoryRecord::print(STD_NAMESPACE ostream &out,
         /* print item content */
         if (!elementList->empty())
         {
+            DcmListPosition pos(elementList);
             DcmObject *dO;
-            elementList->seek(ELP_first);
+            pos.seek(ELP_first);
             do {
-                dO = elementList->get();
+                dO = pos.get();
                 dO->print(out, flags, level + 1, pixelFileName, pixelCounter);
-            } while (elementList->seek(ELP_next));
+            } while (pos.seek(ELP_next));
         }
         if (lowerLevelList->card() > 0)
             lowerLevelList->print(out, flags, level + 1);
@@ -1288,13 +1290,14 @@ OFCondition DcmDirectoryRecord::writeXML(STD_NAMESPACE ostream &out,
         /* write item content */
         if (!elementList->empty())
         {
+            DcmListPosition pos(elementList);
             /* write content of all children */
             DcmObject *dO;
-            elementList->seek(ELP_first);
+            pos.seek(ELP_first);
             do {
-                dO = elementList->get();
+                dO = pos.get();
                 l_error = dO->writeXML(out, flags);
-            } while (l_error.good() && elementList->seek(ELP_next));
+            } while (l_error.good() && pos.seek(ELP_next));
         }
         if (l_error.good())
         {

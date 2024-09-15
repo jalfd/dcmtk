@@ -80,30 +80,31 @@
 
 DcmItem::DcmItem()
   : DcmObject(DCM_ItemTag),
-    elementList(NULL),
+    elementList(new DcmList()),
+    writePosition(elementList),
     lastElementComplete(OFTrue),
     fStartPosition(0),
     privateCreatorCache()
 {
-    elementList = new DcmList;
 }
 
 
 DcmItem::DcmItem(const DcmTag &tag,
                  const Uint32 len)
   : DcmObject(tag, len),
-    elementList(NULL),
+    elementList(new DcmList()),
+    writePosition(elementList),
     lastElementComplete(OFTrue),
     fStartPosition(0),
     privateCreatorCache()
 {
-    elementList = new DcmList;
 }
 
 
 DcmItem::DcmItem(const DcmItem &old)
   : DcmObject(old),
     elementList(new DcmList),
+    writePosition(elementList),
     lastElementComplete(old.lastElementComplete),
     fStartPosition(old.fStartPosition),
     privateCreatorCache()
@@ -136,6 +137,7 @@ DcmItem& DcmItem::operator=(const DcmItem& obj)
         elementList->deleteAllElements();
 
         // copy DcmItem's member variables
+        writePosition = obj.writePosition;
         lastElementComplete = obj.lastElementComplete;
         fStartPosition = obj.fStartPosition;
         if (!obj.elementList->empty())
@@ -536,12 +538,11 @@ OFCondition DcmItem::writeXML(STD_NAMESPACE ostream &out,
     {
         /* write content of all children */
         DcmObject *dO;
-        DcmListPosition pos(elementList);
-        pos.seek(ELP_first);
+        writePosition.seek(ELP_first);
         do {
-            dO = pos.get();
+            dO = writePosition.get();
             l_error = dO->writeXML(out, flags);
-        } while (l_error.good() && pos.seek(ELP_next));
+        } while (l_error.good() && writePosition.seek(ELP_next));
     }
     if (l_error.good())
     {
@@ -577,13 +578,12 @@ OFCondition DcmItem::writeJsonExt(STD_NAMESPACE ostream &out,
 
     if (!elementList->empty())
     {
-        DcmListPosition pos(elementList);
         // iterate through all elements in this item
-        pos.seek(ELP_first);
+        writePosition.seek(ELP_first);
         do
         {
             // get next item
-            elem = pos.get();
+            elem = writePosition.get();
 
             // check if this is a group length, and if so, ignore
             if (elem->getTag().getElement() != 0)
@@ -600,7 +600,7 @@ OFCondition DcmItem::writeJsonExt(STD_NAMESPACE ostream &out,
               num_printed++;
             }
         }
-        while (status.good() && pos.seek(ELP_next));
+        while (status.good() && writePosition.seek(ELP_next));
 
         // print closing braces if and only if there were opening braces
         if (num_printed > 0 && printBraces)
@@ -1559,7 +1559,6 @@ OFCondition DcmItem::write(DcmOutputStream &outStream,
     errorFlag = outStream.status();
     if (errorFlag.good() && getTransferState() != ERW_ready)
     {
-      DcmListPosition pos(elementList);
       if (getTransferState() == ERW_init)
       {
         // Force a compression filter (if any) to process the input buffer, by calling outStream.write().
@@ -1580,7 +1579,7 @@ OFCondition DcmItem::write(DcmOutputStream &outStream,
           if (oByteOrder == EBO_unknown) return EC_IllegalCall;
           swapIfNecessary(oByteOrder, gLocalByteOrder, &valueLength, 4, 4);
           outStream.write(&valueLength, 4); // 4 bytes length
-          pos.seek(ELP_first);
+          writePosition.seek(ELP_first);
           setTransferState(ERW_inWork);
         } else {
           errorFlag = EC_StreamNotifyClient;
@@ -1590,15 +1589,15 @@ OFCondition DcmItem::write(DcmOutputStream &outStream,
       {
         // elementList->get() can be NULL if buffer was full after
         // writing the last item but before writing the sequence delimitation.
-        if (!elementList->empty() && (pos.get() != NULL))
+        if (!elementList->empty() && (writePosition.get() != NULL))
         {
           DcmObject *dO = NULL;
           do
           {
-              dO = pos.get();
+              dO = writePosition.get();
               if (dO->transferState() != ERW_ready)
                 errorFlag = dO->write(outStream, oxfer, enctype, wcache);
-          } while (errorFlag.good() && pos.seek(ELP_next));
+          } while (errorFlag.good() && writePosition.seek(ELP_next));
         }
         if (errorFlag.good())
         {
@@ -1647,8 +1646,6 @@ OFCondition DcmItem::writeSignatureFormat(DcmOutputStream &outStream,
     errorFlag = outStream.status();
     if (errorFlag.good() && getTransferState() != ERW_ready)
     {
-      DcmListPosition pos(elementList);
-
       if (getTransferState() == ERW_init)
       {
         // Force a compression filter (if any) to process the input buffer, by calling outStream.write().
@@ -1662,7 +1659,7 @@ OFCondition DcmItem::writeSignatureFormat(DcmOutputStream &outStream,
             setLengthField(DCM_UndefinedLength);
           errorFlag = writeTag(outStream, getTag(), oxfer);
           /* we don't write the item length */
-          pos.seek(ELP_first);
+          writePosition.seek(ELP_first);
           setTransferState(ERW_inWork);
         } else
           errorFlag = EC_StreamNotifyClient;
@@ -1671,15 +1668,15 @@ OFCondition DcmItem::writeSignatureFormat(DcmOutputStream &outStream,
       {
         // elementList->get() can be NULL if buffer was full after
         // writing the last item but before writing the sequence delimitation.
-        if (!elementList->empty() && (pos.get() != NULL))
+        if (!elementList->empty() && (writePosition.get() != NULL))
         {
           DcmObject *dO = NULL;
           do
           {
-            dO = pos.get();
+            dO = writePosition.get();
             if (dO->isSignable() && dO->transferState() != ERW_ready)
               errorFlag = dO->writeSignatureFormat(outStream, oxfer, enctype, wcache);
-          } while (errorFlag.good() && pos.seek(ELP_next));
+          } while (errorFlag.good() && writePosition.seek(ELP_next));
         }
         if (errorFlag.good())
         {

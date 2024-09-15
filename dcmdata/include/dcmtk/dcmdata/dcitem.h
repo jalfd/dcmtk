@@ -1361,6 +1361,8 @@ class DCMTK_DCMDATA_EXPORT DcmItem
     /// the list of elements maintained by this object
     DcmList *elementList;
 
+    DcmListPosition writePosition;
+
     /** flag used during suspended I/O. Indicates whether the last element
      *  was completely or only partially read/written during the last call
      *  to read/write.

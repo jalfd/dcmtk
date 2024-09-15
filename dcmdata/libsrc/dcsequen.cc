@@ -42,6 +42,7 @@
 DcmSequenceOfItems::DcmSequenceOfItems(const DcmTag &tag)
 : DcmElement(tag, 0),
   itemList(new DcmList),
+  writePosition(itemList),
   lastItemComplete(OFTrue),
   fStartPosition(0),
   readAsUN_(OFFalse)
@@ -58,6 +59,7 @@ DcmSequenceOfItems::DcmSequenceOfItems(
   OFBool readAsUN)
 : DcmElement(tag, len),
   itemList(new DcmList),
+  writePosition(itemList),
   lastItemComplete(OFTrue),
   fStartPosition(0),
   readAsUN_(readAsUN)
@@ -71,21 +73,24 @@ DcmSequenceOfItems::DcmSequenceOfItems(
 DcmSequenceOfItems::DcmSequenceOfItems(const DcmSequenceOfItems &old)
   : DcmElement(old),
     itemList(new DcmList),
+    writePosition(itemList),
     lastItemComplete(old.lastItemComplete),
     fStartPosition(old.fStartPosition),
     readAsUN_(old.readAsUN_)
 {
     if (!old.itemList->empty())
     {
-        itemList->seek(ELP_first);
-        old.itemList->seek(ELP_first);
+        DcmListPosition pos(itemList);
+        DcmListPosition old_pos(old.itemList);
+        pos.seek(ELP_first);
+        old_pos.seek(ELP_first);
         do
         {
-            DcmObject *dO = old.itemList->get()->clone();
-            itemList->insert(dO, ELP_next);
+            DcmObject *dO = old_pos.get()->clone();
+            pos.insert(dO, ELP_next);
             // remember the parent
             dO->setParent(this);
-        } while (old.itemList->seek(ELP_next));
+        } while (old_pos.seek(ELP_next));
     }
 }
 
@@ -108,6 +113,7 @@ DcmSequenceOfItems &DcmSequenceOfItems::operator=(const DcmSequenceOfItems &obj)
   if (this != &obj)
   {
     DcmElement::operator=(obj);
+    writePosition = obj.writePosition;
     lastItemComplete = obj.lastItemComplete;
     fStartPosition = obj.fStartPosition;
     readAsUN_ = obj.readAsUN_;
@@ -116,6 +122,8 @@ DcmSequenceOfItems &DcmSequenceOfItems::operator=(const DcmSequenceOfItems &obj)
     DcmList *newList = new DcmList;
     if (newList)
     {
+        DcmListPosition pos(newList);
+        DcmListPosition src_pos(obj.itemList);
         switch (obj.ident())
         {
             case EVR_SQ:
@@ -125,10 +133,10 @@ DcmSequenceOfItems &DcmSequenceOfItems::operator=(const DcmSequenceOfItems &obj)
                 {
                     DcmObject *oldDO;
                     DcmObject *newDO;
-                    newList->seek(ELP_first);
-                    obj.itemList->seek(ELP_first);
+                    pos.seek(ELP_first);
+                    src_pos.seek(ELP_first);
                     do {
-                        oldDO = obj.itemList->get();
+                        oldDO = src_pos.get();
                         switch (oldDO->ident())
                         {
                             case EVR_item:
@@ -148,10 +156,10 @@ DcmSequenceOfItems &DcmSequenceOfItems::operator=(const DcmSequenceOfItems &obj)
                                 DCMDATA_WARN("DcmSequenceOfItems: Non-item element " << oldDO->getTag() << " found");
                                 break;
                         }
-                        newList->insert(newDO, ELP_next);
+                        pos.insert(newDO, ELP_next);
                         // remember the parent
                         newDO->setParent(this);
-                    } while (obj.itemList->seek(ELP_next));
+                    } while (src_pos.seek(ELP_next));
                 }
                 break;
             default:
@@ -283,11 +291,12 @@ void DcmSequenceOfItems::print(STD_NAMESPACE ostream &out,
         {
             /* print all items contained in the sequence */
             DcmObject *dO;
-            itemList->seek(ELP_first);
+            DcmListPosition pos(itemList);
+            pos.seek(ELP_first);
             do {
-                dO = itemList->get();
+                dO = pos.get();
                 dO->print(out, flags, level + 1, pixelFileName, pixelCounter);
-            } while (itemList->seek(ELP_next));
+            } while (pos.seek(ELP_next));
         }
     } else {
         OFOStringStream oss;
@@ -304,11 +313,12 @@ void DcmSequenceOfItems::print(STD_NAMESPACE ostream &out,
         if (!itemList->empty())
         {
             DcmObject *dO;
-            itemList->seek(ELP_first);
+            DcmListPosition pos(itemList);
+            pos.seek(ELP_first);
             do {
-                dO = itemList->get();
+                dO = pos.get();
                 dO->print(out, flags, level + 1, pixelFileName, pixelCounter);
-            } while (itemList->seek(ELP_next));
+            } while (pos.seek(ELP_next));
         }
         /* print sequence end line */
         DcmTag delimItemTag(DCM_SequenceDelimitationItemTag);
@@ -337,16 +347,16 @@ OFCondition DcmSequenceOfItems::writeXML(STD_NAMESPACE ostream &out,
             unsigned long itemNo = 1;
             /* write content of all children */
             DcmObject *dO;
-            itemList->seek(ELP_first);
+            writePosition.seek(ELP_first);
             do
             {
                 out << "<Item number=\"" << (itemNo++) << "\">" << OFendl;
-                dO = itemList->get();
+                dO = writePosition.get();
                 l_error = dO->writeXML(out, flags);
                 /* exit loop in case of error */
                 if (l_error.bad()) break;
                 out << "</Item>" << OFendl;
-            } while (itemList->seek(ELP_next));
+            } while (writePosition.seek(ELP_next));
         }
         if (l_error.good())
         {
@@ -380,12 +390,12 @@ OFCondition DcmSequenceOfItems::writeXML(STD_NAMESPACE ostream &out,
         {
             /* write content of all children */
             DcmObject *dO;
-            itemList->seek(ELP_first);
+            writePosition.seek(ELP_first);
             do
             {
-                dO = itemList->get();
+                dO = writePosition.get();
                 l_error = dO->writeXML(out, flags);
-            } while (l_error.good() && itemList->seek(ELP_next));
+            } while (l_error.good() && writePosition.seek(ELP_next));
         }
         if (l_error.good())
         {
@@ -410,12 +420,12 @@ OFCondition DcmSequenceOfItems::writeJson(STD_NAMESPACE ostream& out,
     if (!itemList->empty())
     {
         format.printValuePrefix(out);
-        itemList->seek(ELP_first);
-        status = itemList->get()->writeJson(out, format);
-        while (status.good() && itemList->seek(ELP_next))
+        writePosition.seek(ELP_first);
+        status = writePosition.get()->writeJson(out, format);
+        while (status.good() && writePosition.seek(ELP_next))
         {
             format.printNextArrayElementPrefix(out);
-            status = itemList->get()->writeJson(out, format);
+            status = writePosition.get()->writeJson(out, format);
         }
         format.printValueSuffix(out);
     }
@@ -437,12 +447,13 @@ OFBool DcmSequenceOfItems::canWriteXfer(const E_TransferSyntax newXfer,
     else if (!itemList->empty())
     {
         DcmObject *dO;
-        itemList->seek(ELP_first);
+        DcmListPosition pos(itemList);
+        pos.seek(ELP_first);
         do
         {
-            dO = itemList->get();
+            dO = pos.get();
             canWrite = dO -> canWriteXfer(newXfer, oldXfer);
-        } while (itemList->seek(ELP_next) && canWrite);
+        } while (pos.seek(ELP_next) && canWrite);
     }
 
     return canWrite;
@@ -480,9 +491,10 @@ Uint32 DcmSequenceOfItems::getLength(const E_TransferSyntax xfer,
     Uint32 sublen = 0;
     if (!itemList->empty())
     {
-        itemList->seek(ELP_first);
+        DcmListPosition pos(itemList);
+        pos.seek(ELP_first);
         do {
-            sublen = itemList->get()->calcElementLength(xfer, enctype);
+            sublen = pos.get()->calcElementLength(xfer, enctype);
             /* explicit length: be sure that total size of contained elements fits into sequence's
                32 Bit length field. If not, switch encoding automatically to undefined
                length for this sequence. Nevertheless, any contained items will be
@@ -504,7 +516,7 @@ Uint32 DcmSequenceOfItems::getLength(const E_TransferSyntax xfer,
                 return DCM_UndefinedLength;
             }
             seqlen += sublen;
-        } while (itemList->seek(ELP_next));
+        } while (pos.seek(ELP_next));
     }
     return seqlen;
 }
@@ -525,12 +537,13 @@ OFCondition DcmSequenceOfItems::computeGroupLengthAndPadding(const E_GrpLenEncod
 
     if (!itemList->empty())
     {
-        itemList->seek(ELP_first);
+        DcmListPosition pos(itemList);
+        pos.seek(ELP_first);
         do {
-            DcmItem *dO = OFstatic_cast(DcmItem *, itemList->get());
+            DcmItem *dO = OFstatic_cast(DcmItem *, pos.get());
             l_error = dO->computeGroupLengthAndPadding
                 (glenc, padenc, xfer, enctype, padlen, subPadlen, instanceLength);
-        } while (l_error.good() && itemList->seek(ELP_next));
+        } while (l_error.good() && pos.seek(ELP_next));
     }
     return l_error;
 }
@@ -638,8 +651,9 @@ OFCondition DcmSequenceOfItems::readSubItem(DcmInputStream &inStream,
     OFCondition l_error = makeSubObject(subObject, newTag, newLength);
     if (l_error.good() && (subObject != NULL))
     {
+        DcmListPosition pos(itemList);
         // inStream.UnsetPutbackMark(); // not needed anymore with new stream architecture
-        itemList->insert(subObject, ELP_next);
+        pos.insert(subObject, ELP_next);
         // dump some information if required
         DCMDATA_TRACE("DcmSequenceOfItems::readSubItem() Sub Item " << newTag << " inserted");
         // remember the parent (i.e. the surrounding sequence)
@@ -718,7 +732,8 @@ OFCondition DcmSequenceOfItems::read(DcmInputStream &inStream,
 
             E_TransferSyntax readxfer = readAsUN_ ? EXS_LittleEndianImplicit : xfer;
 
-            itemList->seek(ELP_last); // append data at end
+            DcmListPosition pos(itemList);
+            pos.seek(ELP_last); // append data at end
             while (inStream.good() && ((getTransferredBytes() < getLengthField()) || !lastItemComplete))
             {
                 DcmTag newTag;
@@ -755,7 +770,7 @@ OFCondition DcmSequenceOfItems::read(DcmInputStream &inStream,
                 }
                 else
                 {
-                    errorFlag = itemList->get()->read(inStream, readxfer, glenc, maxReadLength);
+                    errorFlag = pos.get()->read(inStream, readxfer, glenc, maxReadLength);
                     if (errorFlag.good())
                         lastItemComplete = OFTrue;
                 }
@@ -818,7 +833,7 @@ OFCondition DcmSequenceOfItems::write(DcmOutputStream &outStream,
                     if (errorFlag.good())
                     {
                         setTransferState(ERW_inWork);
-                        itemList->seek(ELP_first);
+                        writePosition.seek(ELP_first);
                     }
                 } else
                     errorFlag = EC_StreamNotifyClient;
@@ -827,15 +842,15 @@ OFCondition DcmSequenceOfItems::write(DcmOutputStream &outStream,
             {
                 // itemList->get() can be NULL if buffer was full after
                 // writing the last item but before writing the sequence delimitation.
-                if (!itemList->empty() && (itemList->get() != NULL))
+                if (!itemList->empty() && (writePosition.get() != NULL))
                 {
                     DcmObject *dO;
                     do
                     {
-                      dO = itemList->get();
+                      dO = writePosition.get();
                       if (dO->transferState() != ERW_ready)
                           errorFlag = dO->write(outStream, oxfer, enctype, wcache);
-                    } while (errorFlag.good() && itemList->seek(ELP_next));
+                    } while (errorFlag.good() && writePosition.seek(ELP_next));
                 }
                 if (errorFlag.good())
                 {
@@ -947,7 +962,7 @@ OFCondition DcmSequenceOfItems::writeSignatureFormat(DcmOutputStream &outStream,
                     if (errorFlag.good())
                     {
                         setTransferState(ERW_inWork);
-                        itemList->seek(ELP_first);
+                        writePosition.seek(ELP_first);
                     }
                 } else
                     errorFlag = EC_StreamNotifyClient;
@@ -956,14 +971,14 @@ OFCondition DcmSequenceOfItems::writeSignatureFormat(DcmOutputStream &outStream,
             {
                 // itemList->get() can be NULL if buffer was full after
                 // writing the last item but before writing the sequence delimitation.
-                if (!itemList->empty() && (itemList->get() != NULL))
+                if (!itemList->empty() && (writePosition.get() != NULL))
                 {
                     DcmObject *dO;
                     do {
-                        dO = itemList->get();
+                        dO = writePosition.get();
                         if (dO->transferState() != ERW_ready)
                             errorFlag = dO->writeSignatureFormat(outStream, oxfer, enctype, wcache);
-                    } while (errorFlag.good() && itemList->seek(ELP_next));
+                    } while (errorFlag.good() && writePosition.seek(ELP_next));
                 }
                 if (errorFlag.good())
                 {
@@ -1004,10 +1019,11 @@ void DcmSequenceOfItems::transferInit()
     lastItemComplete = OFTrue;
     if (!itemList->empty())
     {
-        itemList->seek(ELP_first);
+        DcmListPosition pos(itemList);
+        pos.seek(ELP_first);
         do {
-            itemList->get()->transferInit();
-        } while (itemList->seek(ELP_next));
+            pos.get()->transferInit();
+        } while (pos.seek(ELP_next));
     }
 }
 
@@ -1020,10 +1036,11 @@ void DcmSequenceOfItems::transferEnd()
     DcmObject::transferEnd();
     if (!itemList->empty())
     {
-        itemList->seek(ELP_first);
+        DcmListPosition pos(itemList);
+        pos.seek(ELP_first);
         do {
-            itemList->get()->transferEnd();
-        } while (itemList->seek(ELP_next));
+            pos.get()->transferEnd();
+        } while (pos.seek(ELP_next));
     }
 }
 
@@ -1036,7 +1053,8 @@ OFCondition DcmSequenceOfItems::prepend(DcmItem *item)
     errorFlag = EC_Normal;
     if (item != NULL)
     {
-        itemList->prepend(item);
+        DcmListPosition pos(itemList);
+        pos.prepend(item);
         // remember the parent (i.e. the surrounding sequence)
         item->setParent(this);
     } else
@@ -1059,22 +1077,24 @@ OFCondition DcmSequenceOfItems::insert(DcmItem *item,
         // special case: last position
         if (where == DCM_EndOfListIndex)
         {
+            DcmListPosition pos(itemList);
             if (before)
             {
                 // insert before end of list
-                itemList->seek(ELP_last);
-                itemList->prepend(item);
+                pos.seek(ELP_last);
+                pos.prepend(item);
             } else {
                 // insert at end of list
-                itemList->append(item);
+                pos.append(item);
             }
             DCMDATA_TRACE("DcmSequenceOfItems::insert() Item inserted "
                 << (before ? "before" : "after") << " last position");
         } else {
-            itemList->seek_to(where);
+            DcmListPosition pos(itemList);
+            pos.seek_to(where);
             // insert before or after "where"
             E_ListPos whichSide = (before) ? (ELP_prev) : (ELP_next);
-            itemList->insert(item, whichSide);
+            pos.insert(item, whichSide);
             DCMDATA_TRACE("DcmSequenceOfItems::insert() Item inserted "
                 << (before ? "before" : "after") << " position " << where);
         }
@@ -1126,7 +1146,8 @@ OFCondition DcmSequenceOfItems::append(DcmItem *item)
     errorFlag = EC_Normal;
     if (item != NULL)
     {
-        itemList->append(item);
+        DcmListPosition pos(itemList);
+        pos.append(item);
         // check whether the new item already has a parent
         if (item->getParent() != NULL)
         {
@@ -1148,7 +1169,8 @@ DcmItem* DcmSequenceOfItems::getItem(const unsigned long num)
 {
     errorFlag = EC_Normal;
     DcmItem *item;
-    item = OFstatic_cast(DcmItem *, itemList->seek_to(num));  // read item from list
+    DcmListPosition pos(itemList);
+    item = OFstatic_cast(DcmItem *, pos.seek_to(num));  // read item from list
     if (item == NULL)
         errorFlag = EC_IllegalCall;
     return item;
@@ -1160,19 +1182,20 @@ DcmItem* DcmSequenceOfItems::getItem(const unsigned long num)
 
 DcmObject *DcmSequenceOfItems::nextInContainer(const DcmObject *obj)
 {
+    DcmListPosition pos(itemList);
     if (!obj)
-        return itemList->get(ELP_first);
+        return pos.get(ELP_first);
     else
     {
-        if (itemList->get() != obj)
+        if (pos.get() != obj)
         {
-            for (DcmObject *search_obj = itemList -> seek(ELP_first);
+            for (DcmObject *search_obj = pos.seek(ELP_first);
                 search_obj && (search_obj != obj);
-                search_obj = itemList -> seek(ELP_next)
+                search_obj = pos.seek(ELP_next)
                )
             { /* do nothing */ }
         }
-        return itemList -> seek(ELP_next);
+        return pos.seek(ELP_next);
     }
 }
 
@@ -1225,10 +1248,11 @@ DcmItem *DcmSequenceOfItems::remove(const unsigned long num)
 {
     errorFlag = EC_Normal;
     DcmItem *item;
-    item = OFstatic_cast(DcmItem *, itemList->seek_to(num));  // read item from list
+    DcmListPosition pos(itemList);
+    item = OFstatic_cast(DcmItem *, pos.seek_to(num));  // read item from list
     if (item != NULL)
     {
-        itemList->remove();
+        pos.remove();
         item->setParent(NULL);              // forget about the parent
     } else
         errorFlag = EC_IllegalCall;
@@ -1246,17 +1270,18 @@ DcmItem *DcmSequenceOfItems::remove(DcmItem *item)
     if (!itemList->empty() && (item != NULL))
     {
         DcmObject *dO;
-        itemList->seek(ELP_first);
+        DcmListPosition pos(itemList);
+        pos.seek(ELP_first);
         do {
-            dO = itemList->get();
+            dO = pos.get();
             if (dO == item)
             {
-                itemList->remove();         // removes element from list but does not delete it
+                pos.remove();         // removes element from list but does not delete it
                 item->setParent(NULL);      // forget about the parent
                 errorFlag = EC_Normal;
                 break;
             }
-        } while (itemList->seek(ELP_next));
+        } while (pos.seek(ELP_next));
     }
     if (errorFlag == EC_IllegalCall)
         retItem = NULL;
@@ -1294,12 +1319,13 @@ OFCondition DcmSequenceOfItems::verify(const OFBool autocorrect)
     if (!itemList->empty())
     {
         DcmObject *dO;
-        itemList->seek(ELP_first);
+        DcmListPosition pos(itemList);
+        pos.seek(ELP_first);
         do {
-            dO = itemList->get();
+            dO = pos.get();
             if (dO->verify(autocorrect).bad())
                 errorFlag = EC_CorruptedData;
-        } while (itemList->seek(ELP_next));
+        } while (pos.seek(ELP_next));
     }
     if (autocorrect == OFTrue)
         setLengthField(getLength());
@@ -1324,9 +1350,10 @@ OFCondition DcmSequenceOfItems::searchSubFromHere(const DcmTagKey &tag,
     OFCondition l_error = EC_TagNotFound;
     if (!itemList->empty())
     {
-        itemList->seek(ELP_first);
+        DcmListPosition pos(itemList);
+        pos.seek(ELP_first);
         do {
-            dO = itemList->get();
+            dO = pos.get();
             if (searchIntoSub)
             {
                 resultStack.push(dO);
@@ -1343,7 +1370,7 @@ OFCondition DcmSequenceOfItems::searchSubFromHere(const DcmTagKey &tag,
                     l_error = EC_Normal;
                 }
             }
-        } while (l_error.bad() && itemList->seek(ELP_next));
+        } while (l_error.bad() && pos.seek(ELP_next));
     }
     return l_error;
 }
@@ -1413,10 +1440,11 @@ OFCondition DcmSequenceOfItems::search(const DcmTagKey &tag,
                     E_SearchMode submode = mode;
                     OFBool searchNode = OFTrue;
                     DcmObject *dnO;
+                    DcmListPosition pos(itemList);
                     dnO = resultStack.elem(i-2); // node of next level
-                    itemList->seek(ELP_first);
+                    pos.seek(ELP_first);
                     do {
-                        dO = itemList->get();
+                        dO = pos.get();
                         searchNode = searchNode ? (dO != dnO) : OFFalse;
                         if (!searchNode)
                         {                               // continue search
@@ -1432,7 +1460,7 @@ OFCondition DcmSequenceOfItems::search(const DcmTagKey &tag,
                                 break;
                             submode = ESM_fromStackTop; // normal search from here
                         }
-                    } while (itemList->seek(ELP_next));
+                    } while (pos.seek(ELP_next));
                 }
             } else                              // probably never reached
                 l_error = EC_IllegalCall;
@@ -1452,13 +1480,14 @@ OFCondition DcmSequenceOfItems::loadAllDataIntoMemory()
     OFCondition l_error = EC_Normal;
     if (!itemList->empty())
     {
-        itemList->seek(ELP_first);
+        DcmListPosition pos(itemList);
+        pos.seek(ELP_first);
         do {
             OFCondition err = EC_Normal;
-            DcmObject *dO = itemList->get();
+            DcmObject *dO = pos.get();
             if ((err = dO->loadAllDataIntoMemory()).bad())
                 l_error = err;
-        } while (itemList->seek(ELP_next));
+        } while (pos.seek(ELP_next));
     }
     return l_error;
 }
@@ -1479,11 +1508,12 @@ OFBool DcmSequenceOfItems::containsUnknownVR() const
 {
     if (!itemList->empty())
     {
-        itemList->seek(ELP_first);
+        DcmListPosition pos(itemList);
+        pos.seek(ELP_first);
         do {
-            if (itemList->get()->containsUnknownVR())
+            if (pos.get()->containsUnknownVR())
                 return OFTrue;
-        } while (itemList->seek(ELP_next));
+        } while (pos.seek(ELP_next));
     }
     return OFFalse;
 }
@@ -1493,11 +1523,12 @@ OFBool DcmSequenceOfItems::containsExtendedCharacters(const OFBool checkAllStrin
 {
     if (!itemList->empty())
     {
-        itemList->seek(ELP_first);
+        DcmListPosition pos(itemList);
+        pos.seek(ELP_first);
         do {
-            if (itemList->get()->containsExtendedCharacters(checkAllStrings))
+            if (pos.get()->containsExtendedCharacters(checkAllStrings))
                 return OFTrue;
-        } while (itemList->seek(ELP_next));
+        } while (pos.seek(ELP_next));
     }
     return OFFalse;
 }
@@ -1507,11 +1538,12 @@ OFBool DcmSequenceOfItems::isAffectedBySpecificCharacterSet() const
 {
     if (!itemList->empty())
     {
-        itemList->seek(ELP_first);
+        DcmListPosition pos(itemList);
+        pos.seek(ELP_first);
         do {
-            if (itemList->get()->isAffectedBySpecificCharacterSet())
+            if (pos.get()->isAffectedBySpecificCharacterSet())
                 return OFTrue;
-        } while (itemList->seek(ELP_next));
+        } while (pos.seek(ELP_next));
     }
     return OFFalse;
 }
@@ -1523,10 +1555,11 @@ OFCondition DcmSequenceOfItems::convertCharacterSet(DcmSpecificCharacterSet &con
     if (!itemList->empty())
     {
         // iterate over all items in this sequence and convert the string elements
-        itemList->seek(ELP_first);
+        DcmListPosition pos(itemList);
+        pos.seek(ELP_first);
         do {
-            status = itemList->get()->convertCharacterSet(converter);
-        } while (status.good() && itemList->seek(ELP_next));
+            status = pos.get()->convertCharacterSet(converter);
+        } while (status.good() && pos.seek(ELP_next));
     }
     return status;
 }

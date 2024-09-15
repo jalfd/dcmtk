@@ -274,11 +274,12 @@ void DcmDataset::print(STD_NAMESPACE ostream &out,
     if (!elementList->empty())
     {
         DcmObject *dO;
-        elementList->seek(ELP_first);
+        DcmListPosition pos(elementList);
+        pos.seek(ELP_first);
         do {
-            dO = elementList->get();
+            dO = pos.get();
             dO->print(out, flags, level + 1, pixelFileName, pixelCounter);
-        } while (elementList->seek(ELP_next));
+        } while (pos.seek(ELP_next));
     }
 }
 
@@ -314,11 +315,12 @@ OFCondition DcmDataset::writeXML(STD_NAMESPACE ostream &out,
     {
         /* write content of all children */
         DcmObject *dO;
-        elementList->seek(ELP_first);
+        DcmListPosition pos(elementList);
+        pos.seek(ELP_first);
         do {
-            dO = elementList->get();
+            dO = pos.get();
             l_error = dO->writeXML(out, flags & ~DCMTypes::XF_useXMLNamespace);
-        } while (l_error.good() && elementList->seek(ELP_next));
+        } while (l_error.good() && pos.seek(ELP_next));
     }
     if (l_error.good())
     {
@@ -507,6 +509,8 @@ OFCondition DcmDataset::write(DcmOutputStream &outStream,
       if (newXfer == EXS_Unknown)
         newXfer = OriginalXfer;
 
+      DcmListPosition pos(elementList);
+
       /* if this function was called for the first time for the dataset object, the transferState is still */
       /* set to ERW_init. In this case, we need to take care of group length and padding elements according */
       /* to the strategies which are specified in glenc and padenc. Additionally, we need to set the element */
@@ -536,7 +540,7 @@ OFCondition DcmDataset::write(DcmOutputStream &outStream,
 
         /* take care of group length and padding elements, according to what is specified in glenc and padenc */
         computeGroupLengthAndPadding(glenc, padenc, newXfer, enctype, padlen, subPadlen, instanceLength);
-        elementList->seek(ELP_first);
+        pos.seek(ELP_first);
         setTransferState(ERW_inWork);
       }
 
@@ -546,16 +550,16 @@ OFCondition DcmDataset::write(DcmOutputStream &outStream,
       {
         // Remember that elementList->get() can be NULL if buffer was full after
         // writing the last item but before writing the sequence delimitation.
-        if (!elementList->empty() && (elementList->get() != NULL))
+        if (!elementList->empty() && (pos.get() != NULL))
         {
           /* as long as everything is ok, go through all elements of this data */
           /* set and write the corresponding information to the buffer */
           DcmObject *dO;
           do
           {
-            dO = elementList->get();
+            dO = pos.get();
             errorFlag = dO->write(outStream, newXfer, enctype, wcache);
-          } while (errorFlag.good() && elementList->seek(ELP_next));
+          } while (errorFlag.good() && pos.seek(ELP_next));
         }
 
         /* if all the information in this has been written to the */
@@ -593,23 +597,24 @@ OFCondition DcmDataset::writeSignatureFormat(DcmOutputStream &outStream,
     errorFlag = outStream.status();
     if (errorFlag.good() && getTransferState() != ERW_ready)
     {
+      DcmListPosition pos(elementList);
       if (getTransferState() == ERW_init)
       {
         computeGroupLengthAndPadding(EGL_recalcGL, EPD_noChange, newXfer, enctype, 0, 0, 0);
-        elementList->seek(ELP_first);
+        pos.seek(ELP_first);
         setTransferState(ERW_inWork);
       }
       if (getTransferState() == ERW_inWork)
       {
         // elementList->get() can be NULL if buffer was full after
         // writing the last item but before writing the sequence delimitation.
-        if (!elementList->empty() && (elementList->get() != NULL))
+        if (!elementList->empty() && (pos.get() != NULL))
         {
           DcmObject *dO;
           do {
-            dO = elementList->get();
+            dO = pos.get();
             errorFlag = dO->writeSignatureFormat(outStream, newXfer, enctype, wcache);
-          } while (errorFlag.good() && elementList->seek(ELP_next));
+          } while (errorFlag.good() && pos.seek(ELP_next));
         }
         if (errorFlag.good())
         {

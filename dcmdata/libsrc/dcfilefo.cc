@@ -55,11 +55,12 @@ DcmFileFormat::DcmFileFormat()
     FileReadMode(ERM_autoDetect)
 {
     DcmMetaInfo *MetaInfo = new DcmMetaInfo();
-    DcmSequenceOfItems::itemList->insert(MetaInfo);
+    DcmListPosition pos(DcmSequenceOfItems::itemList);
+    pos.insert(MetaInfo);
     MetaInfo->setParent(this);
 
     DcmDataset *Dataset = new DcmDataset();
-    DcmSequenceOfItems::itemList->insert(Dataset);
+    pos.insert(Dataset);
     Dataset->setParent(this);
 }
 
@@ -70,7 +71,8 @@ DcmFileFormat::DcmFileFormat(DcmDataset *dataset,
     FileReadMode(ERM_autoDetect)
 {
     DcmMetaInfo *MetaInfo = new DcmMetaInfo();
-    DcmSequenceOfItems::itemList->insert(MetaInfo);
+    DcmListPosition pos(DcmSequenceOfItems::itemList);
+    pos.insert(MetaInfo);
     MetaInfo->setParent(this);
 
     DcmDataset* insertion;
@@ -87,7 +89,7 @@ DcmFileFormat::DcmFileFormat(DcmDataset *dataset,
         insertion = dataset;
     }
     insertion->setParent(this);
-    DcmSequenceOfItems::itemList->insert(insertion);
+    pos.insert(insertion);
 }
 
 
@@ -154,12 +156,13 @@ void DcmFileFormat::print(STD_NAMESPACE ostream &out,
     out << OFendl;
     if (!itemList->empty())
     {
+        DcmListPosition pos(DcmSequenceOfItems::itemList);
         DcmObject *dO;
-        itemList->seek(ELP_first);
+        pos.seek(ELP_first);
         do {
-            dO = itemList->get();
+            dO = pos.get();
             dO->print(out, flags, level, pixelFileName, pixelCounter);
-        } while (itemList->seek(ELP_next));
+        } while (pos.seek(ELP_next));
     } else {
         if (flags & DCMTypes::PF_useANSIEscapeCodes)
             out << DCMDATA_ANSI_ESCAPE_CODE_COMMENT;
@@ -200,13 +203,14 @@ OFCondition DcmFileFormat::writeXML(STD_NAMESPACE ostream &out,
         /* write content of file meta information and dataset */
         if (!itemList->empty())
         {
+            DcmListPosition pos(DcmSequenceOfItems::itemList);
             /* write content of all children */
             DcmObject *dO;
-            itemList->seek(ELP_first);
+            pos.seek(ELP_first);
             do {
-                dO = itemList->get();
+                dO = pos.get();
                 l_error = dO->writeXML(out, flags & ~DCMTypes::XF_useXMLNamespace);
-            } while (l_error.good() && itemList->seek(ELP_next));
+            } while (l_error.good() && pos.seek(ELP_next));
         } else {
             /* a file format should never be empty */
             l_error = EC_CorruptedData;
@@ -713,14 +717,15 @@ OFCondition DcmFileFormat::readUntilTag(DcmInputStream &inStream,
             errorFlag = EC_EndOfStream;
         else if (errorFlag.good() && getTransferState() != ERW_ready)
         {
+            DcmListPosition pos(itemList);
             // the new data is added to the end
-            itemList->seek(ELP_last);
+            pos.seek(ELP_last);
 
             DcmMetaInfo *metaInfo = getMetaInfo();
             if (metaInfo == NULL && getTransferState() == ERW_init)
             {
                 metaInfo = new DcmMetaInfo();
-                itemList->insert(metaInfo, ELP_first);
+                pos.insert(metaInfo, ELP_first);
                 // remember the parent
                 metaInfo->setParent(this);
             }
@@ -749,8 +754,8 @@ OFCondition DcmFileFormat::readUntilTag(DcmInputStream &inStream,
                 if (dataset == NULL && getTransferState() == ERW_init)
                 {
                     dataset = new DcmDataset();
-                    itemList->seek (ELP_first);
-                    itemList->insert(dataset, ELP_next);
+                    pos.seek (ELP_first);
+                    pos.insert(dataset, ELP_next);
                     // remember the parent
                     dataset->setParent(this);
                 }
@@ -851,7 +856,6 @@ OFCondition DcmFileFormat::write(DcmOutputStream &outStream,
             if (getTransferState() == ERW_init)
             {
                 validateMetaInfo(outxfer, writeMode);
-                itemList->seek(ELP_first);
                 setTransferState(ERW_inWork);
             }
             /* if the transfer state is set to ERW_inWork, we need to write the */
@@ -1075,8 +1079,9 @@ DcmMetaInfo *DcmFileFormat::getMetaInfo()
 {
     errorFlag = EC_Normal;
     DcmMetaInfo *meta = NULL;
-    if (itemList->seek_to(0) != NULL && itemList->get()->ident() == EVR_metainfo)
-        meta = OFstatic_cast(DcmMetaInfo *, itemList->get());
+    DcmListPosition pos(itemList);
+    if (pos.seek_to(0) != NULL && pos.get()->ident() == EVR_metainfo)
+        meta = OFstatic_cast(DcmMetaInfo *, pos.get());
     else
         errorFlag = EC_IllegalCall;
     return meta;
@@ -1090,8 +1095,9 @@ DcmDataset *DcmFileFormat::getDataset()
 {
     errorFlag = EC_Normal;
     DcmDataset *data = NULL;
-    if (itemList->seek_to(1) != NULL && itemList->get()->ident() == EVR_dataset)
-        data = OFstatic_cast(DcmDataset *, itemList->get());
+    DcmListPosition pos(itemList);
+    if (pos.seek_to(1) != NULL && pos.get()->ident() == EVR_dataset)
+        data = OFstatic_cast(DcmDataset *, pos.get());
     else
         errorFlag = EC_IllegalCall;
     return data;
@@ -1105,13 +1111,14 @@ DcmDataset *DcmFileFormat::getAndRemoveDataset()
 {
     errorFlag = EC_Normal;
     DcmDataset *data = NULL;
-    if (itemList->seek_to(1) != NULL && itemList->get()->ident() == EVR_dataset)
+    DcmListPosition pos(itemList);
+    if (pos.seek_to(1) != NULL && pos.get()->ident() == EVR_dataset)
     {
-        data = OFstatic_cast(DcmDataset *, itemList->remove());
+        data = OFstatic_cast(DcmDataset *, pos.remove());
         // forget about the parent
         data->setParent(NULL);
         DcmDataset *Dataset = new DcmDataset();
-        DcmSequenceOfItems::itemList->insert(Dataset, ELP_last);
+        pos.insert(Dataset, ELP_last);
         // remember the parent
         Dataset->setParent(this);
     }

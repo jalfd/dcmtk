@@ -157,11 +157,12 @@ void DcmMetaInfo::print(STD_NAMESPACE ostream &out,
     if (!elementList->empty())
     {
         DcmObject *dO;
-        elementList->seek(ELP_first);
+        DcmListPosition pos(elementList);
+        pos.seek(ELP_first);
         do {
-            dO = elementList->get();
+            dO = pos.get();
             dO->print(out, flags, level + 1, pixelFileName, pixelCounter);
-        } while (elementList->seek(ELP_next));
+        } while (pos.seek(ELP_next));
     }
 }
 
@@ -189,12 +190,13 @@ OFCondition DcmMetaInfo::writeXML(STD_NAMESPACE ostream &out,
         {
             /* write content of all children */
             DcmObject *dO;
-            elementList->seek(ELP_first);
+            DcmListPosition pos(elementList);
+            pos.seek(ELP_first);
             do
             {
-                dO = elementList->get();
+                dO = pos.get();
                 l_error = dO->writeXML(out, flags);
-            } while (l_error.good() && elementList->seek(ELP_next));
+            } while (l_error.good() && pos.seek(ELP_next));
         }
         if (l_error.good())
         {
@@ -217,13 +219,14 @@ OFCondition DcmMetaInfo::writeJson(STD_NAMESPACE ostream &out,
         // write content of file meta information
         if (!elementList->empty())
         {
-            elementList->seek(ELP_first);
+            DcmListPosition pos(elementList);
+            pos.seek(ELP_first);
             OFCondition status = EC_Normal;
-            status = elementList->get()->writeJson(out, format);
-            while (status.good() && elementList->seek(ELP_next))
+            status = pos.get()->writeJson(out, format);
+            while (status.good() && pos.seek(ELP_next))
             {
                 out << "," << format.newline();
-                status = elementList->get()->writeJson(out, format);
+                status = pos.get()->writeJson(out, format);
             }
             return status;
         }
@@ -373,9 +376,11 @@ OFCondition DcmMetaInfo::readGroupLength(DcmInputStream &inStream,
         {
             l_error = DcmItem::readSubElement(inStream, newTag, newValueLength, newxfer, glenc, maxReadLength);
             bytesRead += newValueLength;
-            if (l_error.good() && newTag == xtag && elementList->get() != NULL && newValueLength > 0)
+            DcmListPosition pos(elementList);
+            pos.seek(ELP_last);
+            if (l_error.good() && newTag == xtag && pos.get() != NULL && newValueLength > 0)
             {
-                l_error = (OFstatic_cast(DcmUnsignedLong *, elementList->get()))->getUint32(headerLen);
+                l_error = (OFstatic_cast(DcmUnsignedLong *, pos.get()))->getUint32(headerLen);
                 DCMDATA_TRACE("DcmMetaInfo::readGroupLength() Group Length of File Meta Header = " << headerLen + bytesRead);
             } else {
                 DCMDATA_WARN("DcmMetaInfo: No Group Length available in Meta Information Header");
@@ -494,7 +499,8 @@ OFCondition DcmMetaInfo::read(DcmInputStream &inStream,
                         if (newTag.getGroup() != 0x0002)
                             DCMDATA_WARN("DcmMetaInfo: Invalid Element " << newTag << " found in Meta Information Header");
                     } else {
-                        errorFlag = elementList->get()->read(inStream, xfer, glenc, maxReadLength);
+                        DcmListPosition pos(elementList);
+                        errorFlag = pos.get()->read(inStream, xfer, glenc, maxReadLength);
                         if (errorFlag.good())
                             lastElementComplete = OFTrue;
                     }
@@ -580,6 +586,7 @@ OFCondition DcmMetaInfo::write(
         /* go ahead and write the meta header information to the out stream */
         if (errorFlag.good() && getTransferState() != ERW_ready)
         {
+            DcmListPosition pos(elementList);
             /* if some particular conditions are met we need to write the file preamble (128 byte wide) and */
             /* the DICOM prefix "DICM" to the stream. Always check if there is enough space in the stream and */
             /* set the transfer state of certain elements to indicate that they have already been written. */
@@ -604,7 +611,7 @@ OFCondition DcmMetaInfo::write(
                         outStream.write(DCM_Magic, 4);
                         fPreambleTransferState = ERW_ready;
                         setTransferState(ERW_inWork);
-                        elementList->seek(ELP_first);
+                        pos.seek(ELP_first);
                     } else
                         errorFlag = EC_StreamNotifyClient;
                 }
@@ -613,14 +620,14 @@ OFCondition DcmMetaInfo::write(
             /* ahead and write the meta header's data elements to the stream. */
             /* (note that at this point elementList->get() should never be NULL, */
             /* but lets play the game safe here...) */
-            if (!elementList->empty() && (getTransferState() == ERW_inWork) && (elementList->get() != NULL))
+            if (!elementList->empty() && (getTransferState() == ERW_inWork) && (pos.get() != NULL))
             {
                 DcmObject *dO;
                 /* iterate over the list of data elements and write them to the stream */
                 do {
-                    dO = elementList->get();
+                    dO = pos.get();
                     errorFlag = dO->write(outStream, outxfer, enctype, wcache);
-                } while (errorFlag.good() && elementList->seek(ELP_next));
+                } while (errorFlag.good() && pos.seek(ELP_next));
             }
             /* if the error flag equals ok and the transfer state equals ERW_inWork, all data elements of the meta */
             /* header have been written to the stream. Indicate this by setting the transfer state to ERW_ready */

@@ -105,6 +105,8 @@ void DcmPixelSequence::print(STD_NAMESPACE ostream &out,
     }
 #endif
 
+    DcmListPosition pos(itemList);
+
     /* print pixel sequence start line */
     if (flags & DCMTypes::PF_showTreeStructure)
     {
@@ -115,11 +117,11 @@ void DcmPixelSequence::print(STD_NAMESPACE ostream &out,
         {
             /* print pixel items */
             DcmObject *dO;
-            itemList->seek(ELP_first);
+            pos.seek(ELP_first);
             do {
-                dO = itemList->get();
+                dO = pos.get();
                 dO->print(out, flags, level + 1, pixelFileName, pixelCounter);
-            } while (itemList->seek(ELP_next));
+            } while (pos.seek(ELP_next));
         }
     } else {
         OFOStringStream oss;
@@ -134,11 +136,11 @@ void DcmPixelSequence::print(STD_NAMESPACE ostream &out,
         if (!itemList->empty())
         {
             DcmObject *dO;
-            itemList->seek(ELP_first);
+            pos.seek(ELP_first);
             do {
-                dO = itemList->get();
+                dO = pos.get();
                 dO->print(out, flags, level + 1, pixelFileName, pixelCounter);
-            } while (itemList->seek(ELP_next));
+            } while (pos.seek(ELP_next));
         }
         /* print pixel sequence end line */
         DcmTag delimItemTag(DCM_SequenceDelimitationItemTag);
@@ -250,16 +252,17 @@ OFCondition DcmPixelSequence::insert(DcmPixelItem *item,
     errorFlag = EC_Normal;
     if (item != NULL)
     {
+        DcmListPosition pos(itemList);
         // special case: last position
         if (where == DCM_EndOfListIndex)
         {
             // insert at end of list (avoid seeking)
-            itemList->append(item);
+            pos.append(item);
             DCMDATA_TRACE("DcmPixelSequence::insert() Item at last position inserted");
         } else {
             // insert after "where"
-            itemList->seek_to(where);
-            itemList->insert(item);
+            pos.seek_to(where);
+            pos.insert(item);
             DCMDATA_TRACE("DcmPixelSequence::insert() Item at position " << where << " inserted");
         }
         // check whether the new item already has a parent
@@ -289,7 +292,8 @@ OFCondition DcmPixelSequence::getItem(DcmPixelItem *&item,
     }
 #endif
     errorFlag = EC_Normal;
-    item = OFstatic_cast(DcmPixelItem*, itemList->seek_to(num));  // read item from list
+    DcmListPosition pos(itemList);
+    item = OFstatic_cast(DcmPixelItem*, pos.seek_to(num));  // read item from list
     if (item == NULL)
         errorFlag = EC_IllegalCall;
     return errorFlag;
@@ -309,10 +313,11 @@ OFCondition DcmPixelSequence::remove(DcmPixelItem *&item,
     }
 #endif
     errorFlag = EC_Normal;
-    item = OFstatic_cast(DcmPixelItem*, itemList->seek_to(num));  // read item from list
+    DcmListPosition pos(itemList);
+    item = OFstatic_cast(DcmPixelItem*, pos.seek_to(num));  // read item from list
     if (item != NULL)
     {
-        itemList->remove();
+        pos.remove();
         item->setParent(NULL);          // forget about the parent
     } else
         errorFlag = EC_IllegalCall;
@@ -335,17 +340,18 @@ OFCondition DcmPixelSequence::remove(DcmPixelItem *item)
     if (!itemList->empty() && item != NULL)
     {
         DcmObject *dO;
-        itemList->seek(ELP_first);
+        DcmListPosition pos(itemList);
+        pos.seek(ELP_first);
         do {
-            dO = itemList->get();
+            dO = pos.get();
             if (dO == item)
             {
-                itemList->remove();         // remove element from list, but do no delete it
+                pos.remove();         // remove element from list, but do no delete it
                 item->setParent(NULL);      // forget about the parent
                 errorFlag = EC_Normal;
                 break;
             }
-        } while (itemList->seek(ELP_next));
+        } while (pos.seek(ELP_next));
     }
     return errorFlag;
 }

@@ -605,6 +605,8 @@ private:
                                      DcmEVR vr,
                                      const E_TransferSyntax oxfer);
 
+    DcmListPosition writePosition;
+
     /** flag used during suspended I/O. Indicates whether the last item
      *  was completely or only partially read/written during the last call
      *  to read/write.
