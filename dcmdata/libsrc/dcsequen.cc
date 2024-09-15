@@ -1123,7 +1123,8 @@ OFCondition DcmSequenceOfItems::insertAtCurrentPos(DcmItem *item,
     {
         // insert before or after current position
         E_ListPos whichSide = (before) ? (ELP_prev) : (ELP_next);
-        itemList->insert(item, whichSide);
+        DcmListPosition pos(itemList);
+        pos.insert(item, whichSide); // FIXME JALF: SUPER BROKEN
         // check whether the new item already has a parent
         if (item->getParent() != NULL)
         {
