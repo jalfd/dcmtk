@@ -61,7 +61,7 @@ is_space (tchar ch)
 #if defined (DCMTK_OFLOG_UNICODE)
     return STD_NAMESPACE iswspace (ch);
 #else
-    return isspace (OFstatic_cast(unsigned char, ch));
+    return OFStandard::isspace (ch);
 #endif
 }
 
