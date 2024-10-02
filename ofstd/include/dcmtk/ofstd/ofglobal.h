@@ -27,6 +27,7 @@
 #ifndef OFGLOBAL_H
 #define OFGLOBAL_H
 
+#include <atomic>
 #include "dcmtk/config/osconfig.h"
 #include "dcmtk/ofstd/ofthread.h"  /* for class OFBool */
 
