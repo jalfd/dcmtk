@@ -61,11 +61,11 @@ public:
   void set(const T& arg)
   {
 #ifdef WITH_THREADS
-    theMutex.lock();
+    theMutex.wrlock();
 #endif
     val = arg;
 #ifdef WITH_THREADS
-    theMutex.unlock();
+    theMutex.wrunlock();
 #endif
   }
 
@@ -76,11 +76,11 @@ public:
   void xget(T& arg)
   {
 #ifdef WITH_THREADS
-    theMutex.lock();
+    theMutex.rdlock();
 #endif
     arg = val;
 #ifdef WITH_THREADS
-    theMutex.unlock();
+    theMutex.rdunlock();
 #endif
   }
 
@@ -92,11 +92,11 @@ public:
   T get()
   {
 #ifdef WITH_THREADS
-    theMutex.lock();
+    theMutex.rdlock();
 #endif
     T result(val);
 #ifdef WITH_THREADS
-    theMutex.unlock();
+    theMutex.rdunlock();
 #endif
     return result;
   }
@@ -111,7 +111,7 @@ private:
   /** if compiled for multi-thread operation, the Mutex protecting
    *  access to the value of this object.
    */
-  OFMutex theMutex;
+  OFReadWriteLock theMutex;
 #endif
 
   /** unimplemented private default constructor */
@@ -124,6 +124,72 @@ private:
   const OFGlobal<T>& operator=(const OFGlobal<T>& arg);
 
 };
+
+template <> class OFGlobal<OFBool>
+{
+public:
+
+  /** constructor.
+   *  @param arg value to which this object is initialised
+   */
+  OFGlobal(const OFBool &arg)
+  : val(arg)
+  {
+  }
+
+  /** destructor.
+   */
+  virtual ~OFGlobal() { }
+
+  /** assigns new value to this object. If compiled for multi-thread operation,
+   *  access to the value of the object is protected by a Mutex.
+   *  @param arg new value
+   */
+  void set(const OFBool& arg)
+  {
+    val = arg;
+  }
+
+  /** gets the value of this object. If compiled for multi-thread operation,
+   *  access to the value of the object is protected by a Mutex.
+   *  @param arg return value is assigned to this parameter.
+   */
+  void xget(OFBool& arg)
+  {
+    arg = val;
+  }
+
+  /** returns the value of this object. If compiled for multi-thread operation,
+   *  access to the value of the object is protected by a Mutex. The result
+   *  is returned by value, not by reference.
+   *  @return value of this object.
+   */
+  OFBool get()
+  {
+    OFBool result(val);
+    return result;
+  }
+
+private:
+
+  /** value of this object
+   */
+  std::atomic<OFBool> val;
+
+
+  /** unimplemented private default constructor */
+  OFGlobal();
+
+  /** unimplemented private copy constructor */
+  OFGlobal(const OFGlobal<OFBool>& arg);
+
+  /** unimplemented private assignment operator */
+  const OFGlobal<OFBool>& operator=(const OFGlobal<OFBool>& arg);
+
+};
+
+
+
 
 
 #endif

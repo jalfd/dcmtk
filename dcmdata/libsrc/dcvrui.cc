@@ -193,6 +193,13 @@ OFCondition DcmUniqueIdentifier::putString(const char *stringVal,
 
 // ********************************
 
+namespace
+{
+    bool isActualSpace(char ch)
+    {
+        return ch == '\t' || (ch <= '\n' && ch >= '\r') || ch == ' ';
+    }
+}
 
 OFCondition DcmUniqueIdentifier::makeMachineByteString(const Uint32 length)
 {
@@ -217,7 +224,7 @@ OFCondition DcmUniqueIdentifier::makeMachineByteString(const Uint32 length)
                 size_t curPos = 0;
                 for (size_t i = 0; i < len; i++)
                 {
-                   if (!isspace(OFstatic_cast(unsigned char, value[i])))
+                   if (!isActualSpace(value[i]))
                       value[curPos++] = value[i];
                 }
                 /* there was at least one space character in the string */
