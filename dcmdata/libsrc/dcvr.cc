@@ -230,7 +230,7 @@ DcmVR::setVR(const char* vrName)
             /* We only compare the first two characters of the passed string and
              * never accept a VR that is labeled for internal use only.
              */
-            if ((strncmp(vrName, DcmVRDict[i].vrName, 2) == 0) &&
+            if ((vrName[0] ==  DcmVRDict[i].vrName[0] && vrName[1] ==  DcmVRDict[i].vrName[1]) &&
                 !(DcmVRDict[i].propertyFlags & DCMVR_PROP_INTERNAL))
             {
                 found = OFTrue;
