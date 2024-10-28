@@ -61,11 +61,11 @@ public:
   void set(const T& arg)
   {
 #ifdef WITH_THREADS
-    theMutex.lock();
+    theMutex.wrlock();
 #endif
     val = arg;
 #ifdef WITH_THREADS
-    theMutex.unlock();
+    theMutex.wrunlock();
 #endif
   }
 
@@ -77,11 +77,11 @@ public:
   T get()
   {
 #ifdef WITH_THREADS
-    theMutex.lock();
+    theMutex.rdlock();
 #endif
     T result(val);
 #ifdef WITH_THREADS
-    theMutex.unlock();
+    theMutex.rdunlock();
 #endif
     return result;
   }
@@ -96,7 +96,7 @@ private:
   /** if compiled for multi-thread operation, the Mutex protecting
    *  access to the value of this object.
    */
-  OFMutex theMutex;
+  OFReadWriteLock theMutex;
 #endif
 
   /** unimplemented private default constructor */
@@ -109,6 +109,5 @@ private:
   const OFGlobal<T>& operator=(const OFGlobal<T>& arg);
 
 };
-
 
 #endif
