@@ -69,21 +69,6 @@ public:
 #endif
   }
 
-  /** gets the value of this object. If compiled for multi-thread operation,
-   *  access to the value of the object is protected by a Mutex.
-   *  @param arg return value is assigned to this parameter.
-   */
-  void xget(T& arg)
-  {
-#ifdef WITH_THREADS
-    theMutex.lock();
-#endif
-    arg = val;
-#ifdef WITH_THREADS
-    theMutex.unlock();
-#endif
-  }
-
   /** returns the value of this object. If compiled for multi-thread operation,
    *  access to the value of the object is protected by a Mutex. The result
    *  is returned by value, not by reference.
