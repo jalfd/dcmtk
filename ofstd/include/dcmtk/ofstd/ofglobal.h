@@ -27,6 +27,10 @@
 #ifndef OFGLOBAL_H
 #define OFGLOBAL_H
 
+
+#if defined(HAVE_CXX11_ATOMICS) && defined(WITH_THREADS)
+#include <atomic>
+#endif
 #include "dcmtk/config/osconfig.h"
 #include "dcmtk/ofstd/ofthread.h"  /* for class OFBool */
 
@@ -107,6 +111,69 @@ private:
 
   /** unimplemented private assignment operator */
   const OFGlobal<T>& operator=(const OFGlobal<T>& arg);
+
+};
+
+template <> class OFGlobal<OFBool>
+{
+public:
+
+  /** constructor.
+   *  @param arg value to which this object is initialised
+   */
+  OFGlobal(const OFBool &arg)
+  : val(arg)
+  {
+  }
+
+  /** destructor.
+   */
+  virtual ~OFGlobal() { }
+
+  /** assigns new value to this object. If compiled for multi-thread operation,
+   *  access to the value of the object is protected by a Mutex.
+   *  @param arg new value
+   */
+  void set(const OFBool& arg)
+  {
+    val = arg;
+  }
+
+  /** gets the value of this object. If compiled for multi-thread operation,
+   *  access to the value of the object is protected by a Mutex.
+   *  @param arg return value is assigned to this parameter.
+   */
+  void xget(OFBool& arg)
+  {
+    arg = val;
+  }
+
+  /** returns the value of this object. If compiled for multi-thread operation,
+   *  access to the value of the object is protected by a Mutex. The result
+   *  is returned by value, not by reference.
+   *  @return value of this object.
+   */
+  OFBool get()
+  {
+    OFBool result(val);
+    return result;
+  }
+
+private:
+
+  /** value of this object
+   */
+  std::atomic<OFBool> val;
+
+
+  /** unimplemented private default constructor */
+  OFGlobal();
+
+  /** unimplemented private copy constructor */
+  OFGlobal(const OFGlobal<OFBool>& arg);
+
+  /** unimplemented private assignment operator */
+  const OFGlobal<OFBool>& operator=(const OFGlobal<OFBool>& arg);
 
 };
 
