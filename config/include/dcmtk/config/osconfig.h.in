@@ -627,6 +627,9 @@ typedef unsigned short ushort;
 /* Define if STL's vector should be used. */
 #undef HAVE_STL_VECTOR
 
+/* Define if STL's atomic should be used. */
+#undef HAVE_STL_ATOMIC
+
 /* Define to 1 if you have the `strdup' function. */
 #undef HAVE_STRDUP
 
